@@ -55,7 +55,7 @@ const NavLink = ({ href, label, icon: Icon, isActive }: { href: string, label: s
       aria-current={isActive ? 'page' : undefined}
     >
       <Icon className="w-5 h-5 md:w-4 shrink-0" />
-      <span className="text-[10px] mt-0.5 md:mt-0 md:text-xs md:ml-1.5 font-medium whitespace-nowrap">{label}</span>
+      <span className="text-[9px] mt-[1px] leading-3 md:mt-0 md:text-xs md:ml-1.5 font-medium whitespace-nowrap">{label}</span>
     </Link>
   );
 };
@@ -107,7 +107,7 @@ export function Navigation() {
                 )}
               >
                 <ChevronUp className="w-5 h-5 md:w-4 shrink-0" />
-                <span className="text-[10px] mt-0.5 md:mt-0 md:text-xs md:ml-1.5 font-medium whitespace-nowrap">More</span>
+                <span className="text-[9px] mt-[1px] leading-3 md:mt-0 md:text-xs md:ml-1.5 font-medium whitespace-nowrap">More</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top" className="mb-2 w-56 bg-card/90 backdrop-blur-md border-primary/30">
