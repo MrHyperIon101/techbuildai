@@ -168,6 +168,8 @@ export default function ComponentDetailsPage() {
               </div>
             </GlassCardContent>
           </GlassCard>
+          
+          {/* Image display section removed */}
 
           {details.technicalCategories && details.technicalCategories.length > 0 ? (
             <GlassCard>
@@ -296,6 +298,9 @@ export default function ComponentDetailsPage() {
 }
 
 function ShoppingLinkDisplay({ link }: { link: ShoppingLink }) {
+  const isGoogleSearch = link.store === "Google Search";
+  const linkText = isGoogleSearch ? "Search online" : link.store;
+
   return (
     <a
       href={link.url}
@@ -306,8 +311,8 @@ function ShoppingLinkDisplay({ link }: { link: ShoppingLink }) {
       <div className="flex items-center">
         <ShoppingCart size={20} className="mr-3 text-accent group-hover:text-accent-foreground" />
         <div>
-          <span className="font-medium text-primary group-hover:text-accent-foreground">{link.store}</span>
-          {link.price && <span className="ml-2 text-sm text-muted-foreground group-hover:text-accent-foreground/80"> - {link.price}</span>}
+          <span className="font-medium text-primary group-hover:text-accent-foreground">{linkText}</span>
+          {!isGoogleSearch && link.price && <span className="ml-2 text-sm text-muted-foreground group-hover:text-accent-foreground/80"> - {link.price}</span>}
         </div>
       </div>
       <ExternalLink size={18} className="text-muted-foreground group-hover:text-accent-foreground" />
@@ -351,7 +356,7 @@ function RelatedProductCard({ product }: { product: RelatedProduct }) {
           </div>
         </div>
       ) : (
-         <p className="text-xs text-muted-foreground italic">No direct shopping links available for this product at the moment.</p>
+         <p className="text-xs text-muted-foreground italic">No shopping links available for this product at the moment.</p>
       )}
     </div>
   );
