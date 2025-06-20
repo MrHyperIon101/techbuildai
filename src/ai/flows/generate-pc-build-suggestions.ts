@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SuggestPcBuildInputSchema = z.object({
-  budget: z.number().describe('The budget for the PC build in USD.'),
+  budget: z.number().describe('The budget for the PC build in INR.'),
   desiredUsage: z.string().describe('The desired usage of the PC (e.g., gaming, video editing).'),
 });
 export type SuggestPcBuildInput = z.infer<typeof SuggestPcBuildInputSchema>;
@@ -22,12 +22,12 @@ const SuggestPcBuildOutputSchema = z.object({
     z.object({
       name: z.string().describe('The name of the component.'),
       type: z.string().describe('The type of component (e.g., CPU, GPU, RAM).'),
-      price: z.number().describe('The price of the component in USD.'),
+      price: z.number().describe('The price of the component in INR.'),
       estimatedPerformance: z.string().describe('Estimated performance of the component for the given usage.'),
-      link: z.string().describe('Link to buy the component')
+      link: z.string().describe('Link to buy the component from amazon.in or flipkart.com')
     })
   ).describe('A list of suggested PC components.'),
-  estimatedTotalCost: z.number().describe('The estimated total cost of the PC build in USD.'),
+  estimatedTotalCost: z.number().describe('The estimated total cost of the PC build in INR.'),
   overallPerformance: z.string().describe('Overall performance of the build for the specified usage.'),
   buildExplanation: z.string().describe('Explanation of why these components were chosen.')
 });
@@ -41,10 +41,10 @@ const prompt = ai.definePrompt({
   name: 'suggestPcBuildPrompt',
   input: {schema: SuggestPcBuildInputSchema},
   output: {schema: SuggestPcBuildOutputSchema},
-  prompt: `You are an expert PC builder. A user wants to build a PC with a budget of {{budget}} USD for {{desiredUsage}}.
+  prompt: `You are an expert PC builder. A user wants to build a PC with a budget of {{budget}} INR for {{desiredUsage}}.
 
   Suggest specific components (component name, type, price, estimated performance and link to buy) for the build, and provide the estimated total cost, overall performance, and an explanation of why these components were chosen.
-  Consider real-time component pricing and availability.
+  Consider real-time component pricing and availability. Prioritize components available on Indian e-commerce sites like amazon.in or flipkart.com and provide direct links to these sites.
 
   Make sure you return all the components and total cost as specified in the output schema.
   `,

@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const builderFormSchema = z.object({
-  budget: z.coerce.number().min(100, "Budget must be at least $100").max(100000, "Budget cannot exceed $100,000"),
+  budget: z.coerce.number().min(8000, "Budget must be at least ₹8,000").max(8000000, "Budget cannot exceed ₹8,000,000"),
   desiredUsage: z.string().min(10, "Please describe your needs in at least 10 characters.").max(500, "Description is too long."),
 });
 
@@ -35,7 +35,7 @@ export default function AiPcBuilderPage() {
   const form = useForm<BuilderFormValues>({
     resolver: zodResolver(builderFormSchema),
     defaultValues: {
-      budget: 1000,
+      budget: 80000,
       desiredUsage: 'Gaming at 1440p and some light video editing.',
     },
   });
@@ -43,7 +43,7 @@ export default function AiPcBuilderPage() {
   const onSubmit: SubmitHandler<BuilderFormValues> = async (data) => {
     setIsLoading(true);
     setSuggestion(null);
-    addMessage({ type: 'user', feature: 'builder', content: `Budget: $${data.budget}, Usage: ${data.desiredUsage}` });
+    addMessage({ type: 'user', feature: 'builder', content: `Budget: ₹${data.budget}, Usage: ${data.desiredUsage}` });
     try {
       const result = await handleSuggestPcBuild(data);
       setSuggestion(result);
@@ -84,9 +84,9 @@ export default function AiPcBuilderPage() {
                   name="budget"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Budget (USD)</FormLabel>
+                      <FormLabel>Budget (INR)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 1500" {...field} className="bg-background/50 rounded-full px-4" />
+                        <Input type="number" placeholder="e.g., 80000" {...field} className="bg-background/50 rounded-full px-4" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -136,7 +136,7 @@ export default function AiPcBuilderPage() {
                 <div>
                   <h3 className="text-xl font-semibold text-accent mb-1">Overall Performance: {suggestion.overallPerformance}</h3>
                   <p className="text-sm text-muted-foreground mb-3">{suggestion.buildExplanation}</p>
-                  <p className="text-2xl font-bold text-primary">Estimated Total Cost: ${suggestion.estimatedTotalCost.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-primary">Estimated Total Cost: ₹{suggestion.estimatedTotalCost.toFixed(2)}</p>
                 </div>
                 <ScrollArea className="h-[400px] pr-3">
                   <div className="space-y-4">
@@ -192,7 +192,7 @@ function ComponentCard({ component }: { component: PCComponent }) {
           <h4 className="font-semibold text-primary">{component.name} <span className="text-xs text-muted-foreground">({component.type})</span></h4>
           <p className="text-sm text-muted-foreground">{component.estimatedPerformance}</p>
         </div>
-        <p className="text-lg font-bold text-accent">${component.price.toFixed(2)}</p>
+        <p className="text-lg font-bold text-accent">₹{component.price.toFixed(2)}</p>
       </div>
       {component.link && (
         <a href={component.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block">
@@ -204,4 +204,3 @@ function ComponentCard({ component }: { component: PCComponent }) {
     </div>
   );
 }
-
