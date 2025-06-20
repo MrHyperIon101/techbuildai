@@ -251,3 +251,4 @@ function IssueCard({ issue }: IssueCardProps) {
     </div>
   );
 }
+
