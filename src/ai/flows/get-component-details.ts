@@ -31,7 +31,7 @@ const ComponentTechnicalCategorySchema = z.object({
 
 const ShoppingLinkSchema = z.object({
   store: z.string().describe("Store name, e.g., 'Amazon.in', 'Flipkart.com'"),
-  url: z.string().url().describe("Direct product URL from the specified store"),
+  url: z.string().describe("Direct product URL from the specified store"), // Changed from z.string().url()
   price: z.string().optional().describe("Current price in INR, e.g., '₹65,000' (optional)"),
 });
 
@@ -41,7 +41,7 @@ const GetComponentDetailsOutputSchema = z.object({
   keyFeatures: z.array(z.string()).optional().describe("A list of 3-5 key features of the component."),
   technicalCategories: z.array(ComponentTechnicalCategorySchema).optional().describe("Detailed technical specifications, grouped by category (e.g., 'Core Specs', 'Memory', 'Connectivity')."),
   shoppingLinks: z.array(ShoppingLinkSchema).optional().describe("Shopping links from Indian e-commerce sites like amazon.in or flipkart.com. Include price in INR if available."),
-  imageUrl: z.string().url().optional().describe("A publicly accessible URL for a representative image of the component (optional)."),
+  imageUrl: z.string().optional().describe("A publicly accessible URL for a representative image of the component (optional)."), // Changed from z.string().url().optional()
 });
 
 export type GetComponentDetailsOutput = z.infer<typeof GetComponentDetailsOutputSchema>;
@@ -78,8 +78,12 @@ const getComponentDetailsFlow = ai.defineFlow(
     outputSchema: GetComponentDetailsOutputSchema,
   },
   async input => {
-    const {output} = await getComponentDetailsPrompt(input);
-    return output!;
+    const {output, usage} = await getComponentDetailsPrompt(input);
+    if (!output) {
+      console.error("AI failed to return valid output for getComponentDetails. Usage data:", usage);
+      throw new Error("AI response did not match the expected schema or was empty. Please try a different component or rephrase your query.");
+    }
+    return output;
   }
 );
 
