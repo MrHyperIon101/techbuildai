@@ -341,7 +341,7 @@ function RelatedProductCard({ product }: { product: RelatedProduct }) {
         </div>
       )}
 
-      {product.shoppingLinks && product.shoppingLinks.length > 0 && (
+      {product.shoppingLinks && product.shoppingLinks.length > 0 ? (
         <div>
           <h5 className="text-sm font-medium text-muted-foreground mb-1">Shop:</h5>
           <div className="space-y-2">
@@ -350,8 +350,7 @@ function RelatedProductCard({ product }: { product: RelatedProduct }) {
             ))}
           </div>
         </div>
-      )}
-      {(!product.shoppingLinks || product.shoppingLinks.length === 0) && (
+      ) : (
          <p className="text-xs text-muted-foreground italic">No direct shopping links available for this product at the moment.</p>
       )}
     </div>

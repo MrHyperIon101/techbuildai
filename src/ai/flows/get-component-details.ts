@@ -32,7 +32,7 @@ const ComponentTechnicalCategorySchema = z.object({
 
 const ShoppingLinkSchema = z.object({
   store: z.string().describe("Store name, e.g., 'Amazon.in', 'Flipkart.com'"),
-  url: z.string().describe("Direct product URL from the specified store"), // Made URL a general string
+  url: z.string().describe("Direct product URL from the specified store"),
   price: z.string().optional().describe("Current price in INR, e.g., '₹65,000' (optional)"),
 });
 
@@ -72,7 +72,7 @@ Key details for the component itself:
 - overallSummary: A concise summary (2-3 sentences). If a summary cannot be generated, this field can be omitted.
 - keyFeatures: A list of 3-5 prominent features.
 - technicalCategories: Group specifications into relevant categories like "Core Specifications", "Memory", "Connectivity", "Power Requirements", "Physical Dimensions". Each category should have a list of spec-value pairs.
-- shoppingLinks: Provide 1-2 *direct and currently working* product links for the component itself from amazon.in or flipkart.com. Include the current price in INR (e.g., "₹XX,XXX") if readily available on the linked page. If a working link to these specific stores cannot be found, or if a product is no longer listed, omit the link.
+- shoppingLinks: Provide 1-2 *direct and currently working* product links for the component itself from amazon.in or flipkart.com. Include the current price in INR (e.g., "₹XX,XXX") if readily available on the linked page. **If a working link to these specific stores cannot be found, or if a product is no longer listed, omit the link.**
 - imageUrl: An optional URL to a clear image of the component.
 
 In addition to the component details, find and include information about related products:
@@ -82,7 +82,7 @@ In addition to the component details, find and include information about related
 
   - For both laptops and PCs:
     - Prioritize products available on Indian e-commerce sites (amazon.in, flipkart.com).
-    - *Crucially, ensure all provided shopping links are current, working, and lead directly to the product page on amazon.in or flipkart.com.* If a working link to these specific stores cannot be found, or if a product is no longer listed or the link is broken, it is better to omit the shoppingLink for that product or even the product itself if no reliable purchasing information can be found.
+    - ***Crucially, ensure all provided shopping links are current, working, and lead directly to the product page on amazon.in or flipkart.com. If a working link to these specific stores cannot be found, or if a product is no longer listed or the link is broken, it is better to omit the shoppingLink for that product or even the product itself if no reliable purchasing information can be found. Do not provide placeholder or generic store links.***
     - If possible, try to list these related products (both laptops and PCs separately) starting with more budget-friendly options first, based on their approximate current price in INR.
 
 Ensure all technical details are accurate and derived from official or reputable sources.
