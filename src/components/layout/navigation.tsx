@@ -23,11 +23,11 @@ const primaryNavItems = [
   { href: '/components-db', label: 'Components', icon: Cpu },
   { href: '/bottleneck-calculator', label: 'Bottleneck', icon: AnalysisIcon },
   { href: '/compatibility-checker', label: 'Compat. Check', icon: ShieldCheck },
-  { href: '/build-guide', label: 'Guide', icon: BookOpen },
   { href: '/history', label: 'History', icon: History },
 ];
 
 const moreNavItems = [
+  { href: '/build-guide', label: 'Guide', icon: BookOpen },
   { href: '/cinebench-scores', label: 'Cinebench', icon: BarChart3 },
   { href: '/3dmark-scores', label: '3DMark', icon: BarChartHorizontalBig },
   { href: '/furmark-scores', label: 'FurMark', icon: Flame },
@@ -40,7 +40,8 @@ const moreNavItems = [
 // Base classes for consistent styling of all nav items (links and the "More" trigger button)
 const navItemBaseClasses = cn(
   'flex flex-col items-center justify-center rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20 shrink-0',
-  'p-1 w-14 h-14', // Mobile: 56px x 56px, padding 4px
+  'p-1 w-12 h-12', // Default (XS Mobile / Icon Only): 48px x 48px
+  'sm:w-14 sm:h-14', // SM Mobile (Icon + Text Below): 56px x 56px
   'md:w-auto md:h-12 md:flex-row md:px-3 md:py-1.5' // Desktop layout adjustments (h-12 = 48px height)
 );
 
@@ -54,8 +55,12 @@ const NavLink = ({ href, label, icon: Icon, isActive }: { href: string, label: s
       )}
       aria-current={isActive ? 'page' : undefined}
     >
-      <Icon className="w-5 h-5 md:w-4 shrink-0" />
-      <span className="text-[9px] mt-[1px] leading-3 md:mt-0 md:text-xs md:ml-1.5 font-medium whitespace-nowrap">{label}</span>
+      <Icon className="w-5 h-5 shrink-0 md:w-4" />
+      <span className={cn(
+        "hidden sm:block sm:text-[9px] sm:mt-[1px] sm:leading-3", // Hidden by default, visible and styled for sm+
+        "md:mt-0 md:text-xs md:ml-1.5", // Desktop overrides
+        "font-medium whitespace-nowrap" // Common styles
+      )}>{label}</span>
     </Link>
   );
 };
@@ -106,8 +111,12 @@ export function Navigation() {
                   isMoreMenuActive ? 'bg-primary/15 text-primary shadow-sm' : 'text-foreground hover:text-primary' 
                 )}
               >
-                <ChevronUp className="w-5 h-5 md:w-4 shrink-0" />
-                <span className="text-[9px] mt-[1px] leading-3 md:mt-0 md:text-xs md:ml-1.5 font-medium whitespace-nowrap">More</span>
+                <ChevronUp className="w-5 h-5 shrink-0 md:w-4" />
+                <span className={cn(
+                  "hidden sm:block sm:text-[9px] sm:mt-[1px] sm:leading-3", // Hidden by default, visible and styled for sm+
+                  "md:mt-0 md:text-xs md:ml-1.5", // Desktop overrides
+                  "font-medium whitespace-nowrap" // Common styles
+                )}>More</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top" className="mb-2 w-56 bg-card/90 backdrop-blur-md border-primary/30">
@@ -130,4 +139,3 @@ export function Navigation() {
     </nav>
   );
 }
-
