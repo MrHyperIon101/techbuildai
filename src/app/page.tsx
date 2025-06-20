@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import Link from 'next/link';
-import { ArrowRight, BarChart, Bot, Cpu, Wrench, PcCase, ShieldCheck } from 'lucide-react';
+import { ArrowRight, BarChart3 as AnalysisIcon, Bot, Cpu, Wrench, PcCase, ShieldCheck, BarChart3 } from 'lucide-react'; // Renamed BarChart to AnalysisIcon to avoid conflict
 import { cn } from '@/lib/utils';
 
 export default function HomePage() {
@@ -38,7 +38,7 @@ export default function HomePage() {
         <FeatureCard
           title="Bottleneck Calculator"
           description="Identify potential performance bottlenecks in your build with our smart calculator."
-          icon={<BarChart className="w-8 h-8 text-accent" />}
+          icon={<AnalysisIcon className="w-8 h-8 text-accent" />} // Changed icon to avoid conflict
           href="/bottleneck-calculator"
         />
         <FeatureCard
@@ -48,18 +48,19 @@ export default function HomePage() {
           href="/compatibility-checker"
         />
         <FeatureCard
+          title="Cinebench Scores"
+          description="Compare CPU performance with a database of Cinebench benchmark scores."
+          icon={<BarChart3 className="w-8 h-8 text-accent" />}
+          href="/cinebench-scores"
+        />
+        <FeatureCard
           title="Step-by-Step Guide"
           description="New to PC building? Our comprehensive guide walks you through the entire process."
           icon={<Wrench className="w-8 h-8 text-accent" />}
           href="/build-guide"
         />
-         <GlassCard className="md:col-span-1 lg:col-span-1 p-6 overflow-hidden relative group flex flex-col items-center justify-center min-h-[250px] text-center">
-          <PcCase size={80} className="text-primary opacity-70 mb-4 group-hover:opacity-100 transition-opacity duration-300" />
-           <div className="relative z-10">
-            <h3 className="text-2xl font-headline font-semibold text-white">Build Your Dream Rig</h3>
-            <p className="text-neutral-300 mt-1">Start your journey with TechBuild AI today.</p>
-          </div>
-        </GlassCard>
+         {/* Removed the generic PcCase card to make space for Cinebench card on some layouts or to keep grid balanced. */}
+         {/* You can add another card here if you want to maintain a 3x2 grid or similar. */}
       </main>
 
       <footer className="mt-16 text-center animate-fade-in">
@@ -106,4 +107,3 @@ function FeatureCard({ title, description, icon, href, className }: FeatureCardP
     </Link>
   );
 }
-

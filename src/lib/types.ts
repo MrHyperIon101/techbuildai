@@ -8,7 +8,7 @@ export interface Message {
   data?: any;
 }
 
-export type FeatureArea = 'builder' | 'components-db' | 'bottleneck-calculator' | 'general' | 'compatibility-checker';
+export type FeatureArea = 'builder' | 'components-db' | 'bottleneck-calculator' | 'general' | 'compatibility-checker' | 'cinebench-scores';
 
 export interface PCComponent {
   name: string;
@@ -46,9 +46,9 @@ export interface ComponentTechnicalCategory {
 }
 
 export interface ShoppingLink {
-  store: string;
-  url: string;
-  price?: string;
+  store: string; // Expect "Google Search"
+  url: string; // Expect a Google Search URL
+  price?: string; // Should be omitted for Google Search links
 }
 
 export interface RelatedProduct {
@@ -77,21 +77,20 @@ export interface BuildGuideStep {
   details?: string[];
 }
 
-// Types for Compatibility Checker
 export interface CompatibilityInput {
   cpu: string;
   motherboard: string;
-  ram: string; // e.g., "16GB DDR5 6000MHz"
+  ram: string;
   gpu?: string;
-  psu: string; // e.g., "750W Gold" or "750W"
-  pcCase: string; // e.g., "Mid Tower ATX" or "Fractal Design Meshify C"
-  storage?: string; // e.g., "1TB NVMe SSD, 2TB HDD"
+  psu: string;
+  pcCase: string;
+  storage?: string;
 }
 
 export interface CompatibilityIssue {
   componentA: string;
   componentB?: string;
-  issueType: string; // e.g., "Socket Mismatch", "RAM Type", "Form Factor", "PSU Wattage"
+  issueType: string;
   description: string;
   suggestion?: string;
 }
@@ -99,7 +98,7 @@ export interface CompatibilityIssue {
 export interface CompatibilityReport {
   isGenerallyCompatible: boolean;
   issues: CompatibilityIssue[];
-  warnings: string[]; // For things like "PSU wattage is an estimate, ensure it's sufficient for all peripherals."
+  warnings: string[];
   overallAssessment: string;
   checkedComponents: {
     cpu?: string;
@@ -110,4 +109,17 @@ export interface CompatibilityReport {
     pcCase?: string;
     storage?: string;
   }
+}
+
+export interface CinebenchScoreEntry {
+  cpuName: string;
+  cinebenchVersion: string; // e.g., "R23", "2024"
+  singleCoreScore: number;
+  multiCoreScore: number;
+  notes?: string; // e.g. "Score may vary based on system configuration"
+}
+
+export interface CinebenchScoresOutput {
+  scores: CinebenchScoreEntry[];
+  dataSourceNotes?: string; // e.g. "Scores compiled from various tech review sites, accuracy may vary."
 }
