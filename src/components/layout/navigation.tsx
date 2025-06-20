@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import {
   Home, Cpu, Search as AnalysisIcon, BookOpen, History, Bot, ShieldCheck,
   BarChart3, BarChartHorizontalBig, Flame, Gauge, Brain, ClipboardList, Users,
-  ChevronUp, MoreHorizontal
+  ChevronUp
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -39,9 +39,9 @@ const moreNavItems = [
 
 // Base classes for consistent styling of all nav items (links and the "More" trigger button)
 const navItemBaseClasses = cn(
-  'flex flex-col items-center justify-center p-1 rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20 shrink-0',
-  'w-16 h-16 md:w-auto md:h-12', // Default size
-  'md:flex-row md:px-3 md:py-1.5' // Desktop layout adjustments
+  'flex flex-col items-center justify-center p-1.5 rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20 shrink-0', // Mobile padding p-1.5
+  'w-[58px] h-[58px]', // Mobile size: 58px x 58px
+  'md:w-auto md:h-12 md:flex-row md:px-3 md:py-1.5' // Desktop layout adjustments (h-12 = 48px height)
 );
 
 const NavLink = ({ href, label, icon: Icon, isActive }: { href: string, label: string, icon: React.ElementType, isActive: boolean }) => {
@@ -100,10 +100,10 @@ export function Navigation() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="ghost" // Use ghost variant to remove default button styling
+                variant="ghost" 
                 className={cn(
-                  navItemBaseClasses, // Apply the same base classes
-                  isMoreMenuActive ? 'bg-primary/15 text-primary shadow-sm' : 'text-foreground hover:text-primary' // Style for non-active/active item
+                  navItemBaseClasses, 
+                  isMoreMenuActive ? 'bg-primary/15 text-primary shadow-sm' : 'text-foreground hover:text-primary' 
                 )}
               >
                 <ChevronUp className="w-5 h-5 md:w-4 shrink-0" />
@@ -130,3 +130,4 @@ export function Navigation() {
     </nav>
   );
 }
+
