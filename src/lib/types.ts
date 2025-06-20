@@ -113,15 +113,16 @@ export interface CompatibilityReport {
 
 export interface CinebenchScoreEntry {
   cpuName: string;
-  cinebenchVersion: string; // e.g., "R23", "2024"
-  singleCoreScore: number;
-  multiCoreScore: number;
-  notes?: string; // e.g. "Score may vary based on system configuration"
+  r23SingleCoreScore: number;
+  r23MultiCoreScore: number;
+  r24SingleCoreScore?: number; // Optional, as R24 is newer
+  r24MultiCoreScore?: number; // Optional
+  notes?: string;
 }
 
 export interface CinebenchScoresOutput {
   scores: CinebenchScoreEntry[];
-  dataSourceNotes?: string; // e.g. "Scores compiled from various tech review sites, accuracy may vary."
+  dataSourceNotes?: string;
 }
 
 export interface Gpu3dMarkScoreEntry {

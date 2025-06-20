@@ -16,7 +16,7 @@ import { handleGetCinebenchScores } from '@/lib/actions';
 import type { CinebenchScoreEntry, CinebenchScoresOutput } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart3, Cpu, Info, ArrowUpDown, ExternalLink, ListChecks } from 'lucide-react';
+import { BarChart3, Cpu, Info, ArrowUpDown, ListChecks } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const searchSchema = z.object({
@@ -27,7 +27,7 @@ type SearchFormValues = z.infer<typeof searchSchema>;
 type SortKey = keyof CinebenchScoreEntry | '';
 type SortOrder = 'asc' | 'desc';
 
-function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'multiCoreScore' }: { scores: CinebenchScoreEntry[], dataSourceNotes?: string, initialSortKey?: SortKey }) {
+function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'r23MultiCoreScore' }: { scores: CinebenchScoreEntry[], dataSourceNotes?: string, initialSortKey?: SortKey }) {
   const [sortKey, setSortKey] = useState<SortKey>(initialSortKey);
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
@@ -35,13 +35,17 @@ function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'multiCo
     const sorted = [...scores];
     if (sortKey) {
       sorted.sort((a, b) => {
-        const valA = a[sortKey as keyof CinebenchScoreEntry];
-        const valB = b[sortKey as keyof CinebenchScoreEntry];
+        const valA = a[sortKey as keyof CinebenchScoreEntry] as number | string | undefined;
+        const valB = b[sortKey as keyof CinebenchScoreEntry] as number | string | undefined;
 
-        if (typeof valA === 'number' && typeof valB === 'number') {
-          return sortOrder === 'asc' ? valA - valB : valB - valA;
+        // Handle undefined scores by treating them as lowest for sorting
+        const numA = typeof valA === 'number' ? valA : (sortOrder === 'asc' ? Infinity : -Infinity);
+        const numB = typeof valB === 'number' ? valB : (sortOrder === 'asc' ? Infinity : -Infinity);
+
+        if (typeof valA === 'number' || valA === undefined) { // Sort numerically if numbers or undefined
+          return sortOrder === 'asc' ? numA - numB : numB - numA;
         }
-        if (typeof valA === 'string' && typeof valB === 'string') {
+        if (typeof valA === 'string' && typeof valB === 'string') { // Sort strings alphabetically
           return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
         }
         return 0;
@@ -60,10 +64,10 @@ function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'multiCo
   };
 
   const renderSortIcon = (key: SortKey) => {
-    if (sortKey !== key) return <ArrowUpDown className="ml-2 h-3 w-3 opacity-30 group-hover:opacity-100" />;
+    if (sortKey !== key) return <ArrowUpDown className="ml-1 h-3 w-3 opacity-30 group-hover:opacity-100" />;
     return sortOrder === 'asc' ?
-      <ArrowUpDown className="ml-2 h-3 w-3 transform rotate-180 text-accent" /> :
-      <ArrowUpDown className="ml-2 h-3 w-3 text-accent" />;
+      <ArrowUpDown className="ml-1 h-3 w-3 transform rotate-180 text-accent" /> :
+      <ArrowUpDown className="ml-1 h-3 w-3 text-accent" />;
   };
 
   if (sortedScores.length === 0) {
@@ -78,32 +82,36 @@ function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'multiCo
 
   return (
     <>
-      <ScrollArea className="max-h-[60vh]">
+      <ScrollArea className="max-h-[60vh] w-full">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="cursor-pointer group hover:bg-muted/50" onClick={() => handleSort('cpuName')}>
+              <TableHead className="cursor-pointer group hover:bg-muted/50 sticky left-0 bg-card z-10" onClick={() => handleSort('cpuName')}>
                 <div className="flex items-center">CPU Name {renderSortIcon('cpuName')}</div>
               </TableHead>
-              <TableHead className="cursor-pointer group hover:bg-muted/50" onClick={() => handleSort('singleCoreScore')}>
-                <div className="flex items-center">Single-Core {renderSortIcon('singleCoreScore')}</div>
+              <TableHead className="cursor-pointer group hover:bg-muted/50 min-w-[120px]" onClick={() => handleSort('r23SingleCoreScore')}>
+                <div className="flex items-center">R23 Single {renderSortIcon('r23SingleCoreScore')}</div>
               </TableHead>
-              <TableHead className="cursor-pointer group hover:bg-muted/50" onClick={() => handleSort('multiCoreScore')}>
-                <div className="flex items-center">Multi-Core {renderSortIcon('multiCoreScore')}</div>
+              <TableHead className="cursor-pointer group hover:bg-muted/50 min-w-[120px]" onClick={() => handleSort('r23MultiCoreScore')}>
+                <div className="flex items-center">R23 Multi {renderSortIcon('r23MultiCoreScore')}</div>
               </TableHead>
-              <TableHead className="cursor-pointer group hover:bg-muted/50" onClick={() => handleSort('cinebenchVersion')}>
-                <div className="flex items-center">Version {renderSortIcon('cinebenchVersion')}</div>
+              <TableHead className="cursor-pointer group hover:bg-muted/50 min-w-[120px]" onClick={() => handleSort('r24SingleCoreScore')}>
+                <div className="flex items-center">R24 Single {renderSortIcon('r24SingleCoreScore')}</div>
               </TableHead>
-              <TableHead>Notes</TableHead>
+              <TableHead className="cursor-pointer group hover:bg-muted/50 min-w-[120px]" onClick={() => handleSort('r24MultiCoreScore')}>
+                <div className="flex items-center">R24 Multi {renderSortIcon('r24MultiCoreScore')}</div>
+              </TableHead>
+              <TableHead className="min-w-[150px]">Notes</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedScores.map((score, index) => (
               <TableRow key={index} className="hover:bg-muted/20">
-                <TableCell className="font-medium text-primary">{score.cpuName}</TableCell>
-                <TableCell className="text-accent">{score.singleCoreScore > 0 ? score.singleCoreScore.toLocaleString() : 'N/A'}</TableCell>
-                <TableCell className="text-accent font-semibold">{score.multiCoreScore > 0 ? score.multiCoreScore.toLocaleString() : 'N/A'}</TableCell>
-                <TableCell>{score.cinebenchVersion}</TableCell>
+                <TableCell className="font-medium text-primary sticky left-0 bg-card z-0">{score.cpuName}</TableCell>
+                <TableCell className="text-accent">{score.r23SingleCoreScore > 0 ? score.r23SingleCoreScore.toLocaleString() : 'N/A'}</TableCell>
+                <TableCell className="text-accent font-semibold">{score.r23MultiCoreScore > 0 ? score.r23MultiCoreScore.toLocaleString() : 'N/A'}</TableCell>
+                <TableCell className="text-accent">{score.r24SingleCoreScore && score.r24SingleCoreScore > 0 ? score.r24SingleCoreScore.toLocaleString() : 'N/A'}</TableCell>
+                <TableCell className="text-accent font-semibold">{score.r24MultiCoreScore && score.r24MultiCoreScore > 0 ? score.r24MultiCoreScore.toLocaleString() : 'N/A'}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{score.notes || 'N/A'}</TableCell>
               </TableRow>
             ))}
@@ -176,7 +184,7 @@ export default function CinebenchScoresPage() {
             variant: "default"
         });
         setIsLoadingSearch(false);
-        setSearchedQuery(null); // Clear any previous search query
+        setSearchedQuery(null);
         return;
     }
     
@@ -203,13 +211,13 @@ export default function CinebenchScoresPage() {
   
   return (
     <div className="space-y-8">
-      <SectionTitle>Cinebench CPU Scores</SectionTitle>
+      <SectionTitle>Cinebench CPU Scores (R23 & R24)</SectionTitle>
 
       <GlassCard>
         <GlassCardHeader>
           <GlassCardTitle className="flex items-center">
             <ListChecks size={28} className="mr-3 text-accent" />
-            Top CPUs - General Cinebench R23 Scores
+            Top CPUs - General Cinebench Scores
           </GlassCardTitle>
         </GlassCardHeader>
         <GlassCardContent>
@@ -220,7 +228,7 @@ export default function CinebenchScoresPage() {
             </div>
           )}
           {!isLoadingTopCpus && topCpuScoresOutput && (
-            <SortableScoreTable scores={topCpuScoresOutput.scores} dataSourceNotes={topCpuScoresOutput.dataSourceNotes} />
+            <SortableScoreTable scores={topCpuScoresOutput.scores} dataSourceNotes={topCpuScoresOutput.dataSourceNotes} initialSortKey="r23MultiCoreScore" />
           )}
         </GlassCardContent>
       </GlassCard>
@@ -269,7 +277,7 @@ export default function CinebenchScoresPage() {
             )}
             {!isLoadingSearch && searchResultOutput && (
                 searchResultOutput.scores.length > 0 ? (
-                    <SortableScoreTable scores={searchResultOutput.scores} dataSourceNotes={searchResultOutput.dataSourceNotes} />
+                    <SortableScoreTable scores={searchResultOutput.scores} dataSourceNotes={searchResultOutput.dataSourceNotes} initialSortKey="r23MultiCoreScore" />
                 ) : (
                     <div className="py-6 text-center">
                         <Cpu size={48} className="text-primary mx-auto mb-4" />
