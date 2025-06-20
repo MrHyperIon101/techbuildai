@@ -113,8 +113,8 @@ const getCinebenchScoresFlow = ai.defineFlow(
       if (!output) {
           console.warn("AI output for Cinebench scores was null or undefined (potentially due to schema validation failure). Input:", input, "Usage:", usage);
           const note = input.cpuName
-            ? `AI was unable to retrieve Cinebench scores for "${input.cpuName}". This could be due to the AI not finding the CPU or an issue formatting the response. Please ensure the name is correct or try a general search.`
-            : "AI was unable to generate a list of top CPU scores at this time, or the response format was invalid. Please try again later or search for a specific CPU.";
+            ? `AI was unable to retrieve Cinebench scores for "${input.cpuName}". This could be due to the AI not finding the CPU or an issue formatting the response. Please ensure the name is correct or try a general search. Data interpretation is based on sources like nanoreview.net.`
+            : "AI was unable to generate a list of top CPU scores at this time, or the response format was invalid. Please try again later or search for a specific CPU. Data interpretation is based on sources like nanoreview.net.";
           return {
               scores: [],
               dataSourceNotes: note
@@ -124,41 +124,32 @@ const getCinebenchScoresFlow = ai.defineFlow(
       const rawScoresArray = (output.scores && Array.isArray(output.scores)) ? output.scores : [];
       let validatedScores: CinebenchScoreEntry[];
 
-      if (input.cpuName) { // Specific CPU search
-        validatedScores = rawScoresArray.map(score => {
-            const singleCore = Number(score.singleCoreScore);
-            const multiCore = Number(score.multiCoreScore);
-            return {
-                cpuName: String(score.cpuName || 'Unknown CPU'),
-                cinebenchVersion: String(score.cinebenchVersion || 'N/A'),
-                singleCoreScore: isNaN(singleCore) ? 0 : singleCore,
-                multiCoreScore: isNaN(multiCore) ? 0 : multiCore,
-                notes: score.notes ? String(score.notes) : undefined,
-            };
-        });
-      } else { // General list case
-          validatedScores = rawScoresArray.map(score => {
-            const singleCore = Number(score.singleCoreScore);
-            const multiCore = Number(score.multiCoreScore);
-            return {
+      // More robust validation and type conversion
+      validatedScores = rawScoresArray.map(score => {
+          const singleCore = Number(score.singleCoreScore);
+          const multiCore = Number(score.multiCoreScore);
+          return {
               cpuName: String(score.cpuName || 'Unknown CPU'),
               cinebenchVersion: String(score.cinebenchVersion || 'N/A'),
-              singleCoreScore: isNaN(singleCore) ? 0 : singleCore,
-              multiCoreScore: isNaN(multiCore) ? 0 : multiCore,
+              singleCoreScore: isNaN(singleCore) ? 0 : Math.max(0, singleCore), // Ensure positive or 0
+              multiCoreScore: isNaN(multiCore) ? 0 : Math.max(0, multiCore),   // Ensure positive or 0
               notes: score.notes ? String(score.notes) : undefined,
-            };
-          }).filter(score => score.cpuName && score.cpuName !== 'Unknown CPU' && score.multiCoreScore > 0);
-      }
-
+          };
+      }).filter(score => score.cpuName && score.cpuName !== 'Unknown CPU' && (input.cpuName || score.multiCoreScore > 0) ); // For general list, ensure some score data exists
+      
       let finalDataSourceNotes = output.dataSourceNotes;
 
-      if (input.cpuName) {
+      if (input.cpuName) { // Specific CPU search
         if (validatedScores.length === 0 && !finalDataSourceNotes) {
           finalDataSourceNotes = `No specific Cinebench score data could be validated for "${input.cpuName}". The AI may not have found this CPU, or data was not in the expected format. Data is interpreted by AI based on sources like nanoreview.net.`;
+        } else if (validatedScores.length > 0 && validatedScores[0].multiCoreScore === 0 && validatedScores[0].singleCoreScore === 0 && !validatedScores[0].notes) {
+           // If scores are 0 and no notes, it's likely AI didn't find it
+           validatedScores[0].notes = `No specific Cinebench R23 scores found for "${input.cpuName}" by the AI. Please verify the CPU name.`;
+           if (!finalDataSourceNotes) finalDataSourceNotes = "Data interpreted by AI based on sources like nanoreview.net.";
         } else if (validatedScores.length > 0 && !finalDataSourceNotes) {
            finalDataSourceNotes = "Cinebench scores can vary. Data interpreted by AI based on sources like nanoreview.net.";
         }
-      } else {
+      } else { // General list case
         if (validatedScores.length === 0 && !finalDataSourceNotes) {
           finalDataSourceNotes = "AI could not generate a list of top CPU scores, or the data format was unusable. Data interpretation is based on sources like nanoreview.net.";
         } else if (validatedScores.length > 0 && !finalDataSourceNotes) {
@@ -168,7 +159,7 @@ const getCinebenchScoresFlow = ai.defineFlow(
       
       return {
         scores: validatedScores,
-        dataSourceNotes: finalDataSourceNotes
+        dataSourceNotes: finalDataSourceNotes || "Data interpreted by AI based on sources like nanoreview.net. Scores and availability may vary."
       };
 
     } catch (error) {
