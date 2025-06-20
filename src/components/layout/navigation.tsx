@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Cpu, Search, Info, BookOpen, History, Bot } from 'lucide-react';
+import { Home, Cpu, Search, BookOpen, History, Bot } from 'lucide-react'; // Removed Info, it's not used
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -28,13 +28,13 @@ export function Navigation() {
               href={item.href}
               key={item.href}
               className={cn(
-                'flex flex-col items-center justify-center p-2 rounded-full transition-all duration-300 ease-in-out  hover:bg-primary/20 aspect-square w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-12 md:aspect-auto md:flex-row md:px-4 md:py-2 md:space-x-2',
+                'flex flex-col items-center justify-center p-2 rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20 aspect-square w-16 h-16 sm:w-20 sm:h-20 md:h-12 md:w-auto md:min-w-[5rem] md:flex-row md:px-4 md:py-2 md:space-x-2',
                 isActive ? 'bg-primary text-primary-foreground shadow-md' : 'text-foreground hover:text-primary',
               )}
               aria-current={isActive ? 'page' : undefined}
             >
-              <item.icon className="w-5 h-5 md:w-4 md:h-4" />
-              <span className="text-xs mt-1 md:mt-0 md:text-sm font-medium">{item.label}</span>
+              <item.icon className="w-5 h-5 md:w-4 md:h-4 shrink-0" />
+              <span className="text-xs mt-1 md:mt-0 md:text-sm font-medium whitespace-nowrap">{item.label}</span>
             </Link>
           );
         })}
@@ -42,3 +42,4 @@ export function Navigation() {
     </nav>
   );
 }
+

@@ -1,10 +1,11 @@
+
 export interface Message {
   id: string;
   type: 'user' | 'ai' | 'system';
   feature: FeatureArea;
   content: string | React.ReactNode;
   timestamp: number;
-  data?: any; // Optional: for structured AI responses like build suggestions
+  data?: any; 
 }
 
 export type FeatureArea = 'builder' | 'components-db' | 'bottleneck-calculator' | 'general';
@@ -29,8 +30,30 @@ export interface BottleneckInfo {
   explanation: string;
 }
 
+// Updated ComponentDetails for richer information
+export interface ComponentSpec {
+  spec: string; 
+  value: string; 
+}
+
+export interface ComponentTechnicalCategory {
+  category: string; 
+  specs: ComponentSpec[];
+}
+
+export interface ShoppingLink {
+  store: string; 
+  url: string;
+  price?: string; 
+}
+
 export interface ComponentDetails {
-  summary: string;
+  componentNameFromAI?: string; 
+  overallSummary: string;
+  keyFeatures?: string[];
+  technicalCategories?: ComponentTechnicalCategory[];
+  shoppingLinks?: ShoppingLink[];
+  imageUrl?: string;
 }
 
 export interface BuildGuideStep {
@@ -41,3 +64,4 @@ export interface BuildGuideStep {
   imageHint?: string;
   details?: string[];
 }
+

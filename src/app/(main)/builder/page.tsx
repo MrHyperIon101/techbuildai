@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -167,11 +168,20 @@ export default function AiPcBuilderPage() {
             ) : (
               <div className="space-y-3">
                 {conversationMessages.map((msg) => (
-                  <div key={msg.id} className={`text-sm p-3 rounded-lg ${msg.type === 'user' ? 'bg-primary/10 text-primary-foreground ml-auto max-w-[80%]' : msg.type === 'ai' ? 'bg-accent/10 text-accent-foreground mr-auto max-w-[80%]' : 'bg-muted/20 text-muted-foreground text-center text-xs italic'}`}>
-                    <strong>{msg.type === 'user' ? 'You' : msg.type === 'ai' ? 'TechBuild AI' : 'System'}:</strong>
+                  <div 
+                    key={msg.id} 
+                    className={`text-sm p-3 rounded-lg max-w-[80%] ${
+                      msg.type === 'user' 
+                        ? 'bg-primary/10 text-primary ml-auto' 
+                        : msg.type === 'ai' 
+                          ? 'bg-accent/10 text-accent mr-auto' 
+                          : 'bg-muted/20 text-muted-foreground text-center text-xs italic'
+                    }`}
+                  >
+                    <strong className="font-semibold">{msg.type === 'user' ? 'You' : msg.type === 'ai' ? 'TechBuild AI' : 'System'}:</strong>
                     {typeof msg.content === 'string' ? <p className="whitespace-pre-wrap">{msg.content}</p> : msg.content}
                     {msg.data && msg.type === 'ai' && (
-                       <p className="mt-1 text-xs text-muted-foreground italic">AI provided structured data (view in results panel).</p>
+                       <p className="mt-1 text-xs text-muted-foreground/80 italic">AI provided structured data (view in results panel).</p>
                     )}
                   </div>
                 ))}
@@ -204,3 +214,4 @@ function ComponentCard({ component }: { component: PCComponent }) {
     </div>
   );
 }
+
