@@ -7,7 +7,7 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/
 import { SectionTitle } from '@/components/common/section-title';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Bot, User, Settings, Trash2, FileText, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain, PackageSearch, ShieldCheck } from 'lucide-react';
+import { Bot, User, Settings, Trash2, FileText, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain, PackageSearch, ShieldCheck, ClipboardList } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Message, FeatureArea } from '@/lib/types';
 
@@ -22,6 +22,7 @@ const featureIcons: Record<FeatureArea, React.ElementType> = {
   'furmark-scores': Flame,
   'pcmark-scores': Gauge,
   'geekbench-scores': Brain,
+  'aida64-scores': ClipboardList,
 };
 
 const featureNames: Record<FeatureArea, string> = {
@@ -35,6 +36,7 @@ const featureNames: Record<FeatureArea, string> = {
   'furmark-scores': 'FurMark Scores',
   'pcmark-scores': 'PCMark Scores',
   'geekbench-scores': 'Geekbench Scores',
+  'aida64-scores': 'AIDA64 Scores',
 };
 
 
@@ -124,3 +126,4 @@ function HistoryItem({ message }: HistoryItemProps) {
   );
 }
 
+    

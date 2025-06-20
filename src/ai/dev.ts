@@ -11,3 +11,6 @@ import '@/ai/flows/get-3dmark-scores.ts';
 import '@/ai/flows/get-furmark-scores.ts';
 import '@/ai/flows/get-pcmark-scores.ts';
 import '@/ai/flows/get-geekbench-scores.ts';
+import '@/ai/flows/get-aida64-scores.ts';
+
+    

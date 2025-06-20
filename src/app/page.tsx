@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import Link from 'next/link';
-import { ArrowRight, Bot, Cpu, Wrench, ShieldCheck, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain } from 'lucide-react';
+import { ArrowRight, Bot, Cpu, Wrench, ShieldCheck, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function HomePage() {
@@ -78,11 +78,17 @@ export default function HomePage() {
           href="/geekbench-scores"
         />
         <FeatureCard
+          title="AIDA64 Scores"
+          description="Explore detailed system component benchmarks with AIDA64."
+          icon={<ClipboardList className="w-8 h-8 text-accent" />}
+          href="/aida64-scores"
+        />
+        <FeatureCard
           title="Step-by-Step Guide"
           description="New to PC building? Our comprehensive guide walks you through the entire process."
           icon={<Wrench className="w-8 h-8 text-accent" />}
           href="/build-guide"
-          className="lg:col-span-1" 
+          className="lg:col-span-1 xl:col-span-2" 
         />
       </main>
 
@@ -130,3 +136,5 @@ function FeatureCard({ title, description, icon, href, className }: FeatureCardP
     </Link>
   );
 }
+
+    

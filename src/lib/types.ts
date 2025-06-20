@@ -19,7 +19,8 @@ export type FeatureArea =
   | '3dmark-scores'
   | 'furmark-scores'
   | 'pcmark-scores'
-  | 'geekbench-scores';
+  | 'geekbench-scores'
+  | 'aida64-scores';
 
 export interface PCComponent {
   name: string;
@@ -189,3 +190,18 @@ export interface GeekbenchScoresOutput {
   scores: GeekbenchScoreEntry[];
   dataSourceNotes?: string;
 }
+
+export interface Aida64ScoreEntry {
+  componentName: string;
+  testName: string;
+  score: number;
+  units: string;
+  notes?: string;
+}
+
+export interface Aida64ScoresOutput {
+  scores: Aida64ScoreEntry[];
+  dataSourceNotes?: string;
+}
+
+    

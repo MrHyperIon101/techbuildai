@@ -10,6 +10,7 @@ import { get3dMarkScores, Get3dMarkScoresInput } from '@/ai/flows/get-3dmark-sco
 import { getFurMarkScores, GetFurMarkScoresInput } from '@/ai/flows/get-furmark-scores';
 import { getPCMarkScores, GetPCMarkScoresInput } from '@/ai/flows/get-pcmark-scores';
 import { getGeekbenchScores, GetGeekbenchScoresInput } from '@/ai/flows/get-geekbench-scores';
+import { getAida64Scores, GetAida64ScoresInput } from '@/ai/flows/get-aida64-scores';
 
 
 import type { 
@@ -21,7 +22,8 @@ import type {
     Gpu3dMarkScoresOutput,
     FurMarkScoresOutput,
     PCMarkScoresOutput,
-    GeekbenchScoresOutput
+    GeekbenchScoresOutput,
+    Aida64ScoresOutput
 } from './types';
 
 export async function handleSuggestPcBuild(input: SuggestPcBuildInput): Promise<BuildSuggestion> {
@@ -181,3 +183,21 @@ export async function handleGetGeekbenchScores(input: GetGeekbenchScoresInput): 
     throw new Error("Failed to retrieve Geekbench scores. Please try again.");
   }
 }
+
+export async function handleGetAida64Scores(input: GetAida64ScoresInput): Promise<Aida64ScoresOutput> {
+  try {
+    const result = await getAida64Scores(input);
+    if (result && !Array.isArray(result.scores)) {
+      result.scores = [];
+    }
+    return result as Aida64ScoresOutput;
+  } catch (error) {
+    console.error("Error in handleGetAida64Scores:", error);
+    if (error instanceof Error && error.message.includes("AI response did not match")) {
+        throw error;
+    }
+    throw new Error("Failed to retrieve AIDA64 scores. Please try again.");
+  }
+}
+
+    
