@@ -238,10 +238,10 @@ function IssueCard({ issue }: IssueCardProps) {
       </h5>
       <p className="text-sm text-destructive-foreground/90 mt-1">{issue.description}</p>
       {issue.componentA && (
-        <p className="text-xs text-destructive-foreground/70 mt-1">
+        <div className="text-xs text-destructive-foreground/70 mt-1">
           Concern between: <Badge variant="destructive" className="mr-1">{issue.componentA}</Badge> 
-          {issue.componentB && <>and <Badge variant="destructive">{issue.componentB}</Badge></>}
-        </p>
+          {issue.componentB && <React.Fragment> and <Badge variant="destructive">{issue.componentB}</Badge></React.Fragment>}
+        </div>
       )}
       {issue.suggestion && (
         <p className="text-sm text-destructive-foreground/80 mt-2 pt-2 border-t border-destructive/30">
@@ -251,4 +251,3 @@ function IssueCard({ issue }: IssueCardProps) {
     </div>
   );
 }
-
