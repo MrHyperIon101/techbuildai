@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import Link from 'next/link';
-import { ArrowRight, BarChart, Bot, Cpu, Wrench, PcCase } from 'lucide-react';
+import { ArrowRight, BarChart, Bot, Cpu, Wrench, PcCase, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function HomePage() {
@@ -42,13 +42,18 @@ export default function HomePage() {
           href="/bottleneck-calculator"
         />
         <FeatureCard
+          title="Compatibility Checker"
+          description="Verify component compatibility with our AI-powered checker before you buy."
+          icon={<ShieldCheck className="w-8 h-8 text-accent" />}
+          href="/compatibility-checker"
+        />
+        <FeatureCard
           title="Step-by-Step Guide"
           description="New to PC building? Our comprehensive guide walks you through the entire process."
           icon={<Wrench className="w-8 h-8 text-accent" />}
           href="/build-guide"
-          className="md:col-span-2 lg:col-span-1"
         />
-         <GlassCard className="md:col-span-2 lg:col-span-2 p-6 overflow-hidden relative group flex flex-col items-center justify-center min-h-[250px] text-center">
+         <GlassCard className="md:col-span-1 lg:col-span-1 p-6 overflow-hidden relative group flex flex-col items-center justify-center min-h-[250px] text-center">
           <PcCase size={80} className="text-primary opacity-70 mb-4 group-hover:opacity-100 transition-opacity duration-300" />
            <div className="relative z-10">
             <h3 className="text-2xl font-headline font-semibold text-white">Build Your Dream Rig</h3>
@@ -101,3 +106,4 @@ function FeatureCard({ title, description, icon, href, className }: FeatureCardP
     </Link>
   );
 }
+

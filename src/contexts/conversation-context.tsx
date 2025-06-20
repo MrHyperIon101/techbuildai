@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Message, FeatureArea } from '@/lib/types';
@@ -26,7 +27,6 @@ export const ConversationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     } catch (error) {
       console.error("Failed to load messages from localStorage:", error);
-      // Fallback to empty array if localStorage is corrupt or unavailable
       setMessages([]);
     }
     setIsLoaded(true);

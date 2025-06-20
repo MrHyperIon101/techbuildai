@@ -8,7 +8,7 @@ export interface Message {
   data?: any;
 }
 
-export type FeatureArea = 'builder' | 'components-db' | 'bottleneck-calculator' | 'general';
+export type FeatureArea = 'builder' | 'components-db' | 'bottleneck-calculator' | 'general' | 'compatibility-checker';
 
 export interface PCComponent {
   name: string;
@@ -73,6 +73,41 @@ export interface BuildGuideStep {
   id: number;
   title: string;
   description: string;
-  icon: React.ElementType; // Changed from image/imageHint to icon
+  icon: React.ElementType;
   details?: string[];
+}
+
+// Types for Compatibility Checker
+export interface CompatibilityInput {
+  cpu: string;
+  motherboard: string;
+  ram: string; // e.g., "16GB DDR5 6000MHz"
+  gpu?: string;
+  psu: string; // e.g., "750W Gold" or "750W"
+  pcCase: string; // e.g., "Mid Tower ATX" or "Fractal Design Meshify C"
+  storage?: string; // e.g., "1TB NVMe SSD, 2TB HDD"
+}
+
+export interface CompatibilityIssue {
+  componentA: string;
+  componentB?: string;
+  issueType: string; // e.g., "Socket Mismatch", "RAM Type", "Form Factor", "PSU Wattage"
+  description: string;
+  suggestion?: string;
+}
+
+export interface CompatibilityReport {
+  isGenerallyCompatible: boolean;
+  issues: CompatibilityIssue[];
+  warnings: string[]; // For things like "PSU wattage is an estimate, ensure it's sufficient for all peripherals."
+  overallAssessment: string;
+  checkedComponents: {
+    cpu?: string;
+    motherboard?: string;
+    ram?: string;
+    gpu?: string;
+    psu?: string;
+    pcCase?: string;
+    storage?: string;
+  }
 }
