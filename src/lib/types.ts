@@ -1,12 +1,11 @@
 
-
 export interface Message {
   id: string;
   type: 'user' | 'ai' | 'system';
   feature: FeatureArea;
   content: string | React.ReactNode;
   timestamp: number;
-  data?: any; 
+  data?: any;
 }
 
 export type FeatureArea = 'builder' | 'components-db' | 'bottleneck-calculator' | 'general';
@@ -29,46 +28,51 @@ export interface BuildSuggestion {
 export interface BottleneckInfo {
   bottleneckPercentage: number;
   explanation: string;
+  bottleneckComponent?: 'CPU' | 'GPU' | 'Balanced' | 'Unknown';
+  recommendedResolution?: string;
+  potentialUpgradeSuggestions?: string[];
+  impactOnGaming?: string;
+  impactOnWorkloads?: string;
 }
 
 export interface ComponentSpec {
-  spec: string; 
-  value: string; 
+  spec: string;
+  value: string;
 }
 
 export interface ComponentTechnicalCategory {
-  category: string; 
+  category: string;
   specs: ComponentSpec[];
 }
 
 export interface ShoppingLink {
-  store: string; 
+  store: string;
   url: string;
-  price?: string; 
+  price?: string;
 }
 
 export interface RelatedProduct {
   name: string;
   type: 'Laptop' | 'Pre-built PC';
-  keySpecs?: string[]; // e.g., ["CPU: i7-12700H", "RAM: 16GB DDR5", "Display: 15.6 inch QHD"]
-  price?: string; // e.g., "₹1,20,000"
+  keySpecs?: string[];
+  price?: string;
   shoppingLinks?: ShoppingLink[];
 }
 
 export interface ComponentDetails {
-  componentNameFromAI?: string; 
+  componentNameFromAI?: string;
   overallSummary?: string;
   keyFeatures?: string[];
   technicalCategories?: ComponentTechnicalCategory[];
   shoppingLinks?: ShoppingLink[];
-  relatedProducts?: RelatedProduct[]; // Laptops and Pre-built PCs
+  relatedProducts?: RelatedProduct[];
+  imageUrl?: string;
 }
 
 export interface BuildGuideStep {
   id: number;
   title: string;
   description: string;
-  image?: string;
-  imageHint?: string;
+  icon: React.ElementType; // Changed from image/imageHint to icon
   details?: string[];
 }

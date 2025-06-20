@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -14,8 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import { handleCalculateBottleneck } from '@/lib/actions';
 import type { BottleneckInfo } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
-import { Zap, AlertTriangle } from 'lucide-react';
+import { Zap, AlertTriangle, Cpu, MonitorPlay, TrendingUp, Gamepad2, Briefcase, Layers, Lightbulb } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 const bottleneckFormSchema = z.object({
   cpu: z.string().min(3, "CPU model must be at least 3 characters.").max(100, "CPU model name is too long."),
@@ -46,10 +48,6 @@ export default function BottleneckCalculatorPage() {
       const result = await handleCalculateBottleneck(data);
       setBottleneck(result);
       addMessage({ type: 'ai', feature: 'bottleneck-calculator', content: `Bottleneck analysis:`, data: result });
-      toast({
-        title: "Bottleneck Analysis Complete!",
-        description: "Check the results below.",
-      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       toast({
@@ -64,10 +62,19 @@ export default function BottleneckCalculatorPage() {
   };
   
   const getBottleneckColor = (percentage: number) => {
-    if (percentage > 20) return 'hsl(var(--destructive))'; // Red for high bottleneck
-    if (percentage > 10) return 'hsl(var(--chart-4))'; // Orange/Yellow for moderate
-    return 'hsl(var(--accent))'; // Green/Blue for low
+    // Assuming positive is CPU bottleneck, negative is GPU bottleneck for this color logic
+    const absPercentage = Math.abs(percentage);
+    if (absPercentage > 20) return 'hsl(var(--destructive))'; 
+    if (absPercentage > 10) return 'hsl(var(--chart-4))'; 
+    return 'hsl(var(--accent))'; 
   };
+
+  const getBottleneckComponentText = (component?: 'CPU' | 'GPU' | 'Balanced' | 'Unknown') => {
+    if (component === 'CPU') return "CPU is the primary bottleneck.";
+    if (component === 'GPU') return "GPU is the primary bottleneck.";
+    if (component === 'Balanced') return "System is relatively balanced.";
+    return "Bottleneck component analysis not available.";
+  }
 
   return (
     <div className="space-y-8">
@@ -132,34 +139,72 @@ export default function BottleneckCalculatorPage() {
               </div>
             )}
             {bottleneck && (
-              <div className="animate-fade-in space-y-4">
+              <div className="animate-fade-in space-y-6">
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Bottleneck Percentage</p>
-                  <p 
-                    className="text-6xl font-bold"
+                  <p className="text-sm text-muted-foreground">Overall Bottleneck Score</p>
+                   <p 
+                    className="text-5xl md:text-6xl font-bold"
                     style={{ color: getBottleneckColor(bottleneck.bottleneckPercentage) }}
                   >
                     {bottleneck.bottleneckPercentage.toFixed(1)}%
                   </p>
                   <Progress 
-                    value={bottleneck.bottleneckPercentage} 
+                    value={Math.abs(bottleneck.bottleneckPercentage)} 
                     className="w-full h-3 mt-2 rounded-full" 
-                    indicatorClassName="rounded-full"
                     style={{ 
-                      // @ts-ignore // Custom property for ShadCN progress color
+                      // @ts-ignore 
                       '--indicator-color': getBottleneckColor(bottleneck.bottleneckPercentage) 
                     }}
                   />
+                   <p className="text-xs text-muted-foreground mt-1">
+                    (Positive: GPU limited by CPU. Negative: CPU limited by GPU. Near 0: Balanced)
+                  </p>
                 </div>
                 
-                <div>
-                  <h4 className="text-lg font-semibold text-accent flex items-center">
-                    <AlertTriangle size={20} className="mr-2" style={{ color: getBottleneckColor(bottleneck.bottleneckPercentage) }} /> Explanation
-                  </h4>
-                  <p className="text-sm text-foreground/90 mt-1 prose prose-sm prose-invert max-w-none">{bottleneck.explanation}</p>
-                </div>
+                <InfoSection icon={Layers} title="Primary Bottleneck Component">
+                   <Badge 
+                     variant={bottleneck.bottleneckComponent === 'Balanced' ? 'default' : 'destructive'}
+                     className={bottleneck.bottleneckComponent === 'Balanced' ? 'bg-accent text-accent-foreground' : 'bg-destructive text-destructive-foreground'}
+                    >
+                      {bottleneck.bottleneckComponent || 'N/A'}
+                    </Badge>
+                  <p className="text-sm text-foreground/90 mt-1">{getBottleneckComponentText(bottleneck.bottleneckComponent)}</p>
+                </InfoSection>
+
+                <InfoSection icon={AlertTriangle} title="Explanation">
+                  <p className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">{bottleneck.explanation}</p>
+                </InfoSection>
+
+                {bottleneck.recommendedResolution && (
+                  <InfoSection icon={MonitorPlay} title="Recommended Gaming Resolution">
+                    <p className="text-sm text-foreground/90">{bottleneck.recommendedResolution}</p>
+                  </InfoSection>
+                )}
+
+                {bottleneck.impactOnGaming && (
+                  <InfoSection icon={Gamepad2} title="Impact on Gaming">
+                    <p className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">{bottleneck.impactOnGaming}</p>
+                  </InfoSection>
+                )}
+
+                {bottleneck.impactOnWorkloads && (
+                  <InfoSection icon={Briefcase} title="Impact on Workloads">
+                    <p className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">{bottleneck.impactOnWorkloads}</p>
+                  </InfoSection>
+                )}
+                
+                {bottleneck.potentialUpgradeSuggestions && bottleneck.potentialUpgradeSuggestions.length > 0 && (
+                  <InfoSection icon={Lightbulb} title="Upgrade Suggestions">
+                    <ul className="list-disc list-inside space-y-1 text-sm text-foreground/90">
+                      {bottleneck.potentialUpgradeSuggestions.map((suggestion, index) => (
+                        <li key={index}>{suggestion}</li>
+                      ))}
+                    </ul>
+                  </InfoSection>
+                )}
+
                 <p className="text-xs text-muted-foreground italic mt-4">
-                  Note: Bottleneck calculations are estimates and can vary based on specific workloads, resolutions, and game settings.
+                  Note: Bottleneck calculations are estimates and can vary based on specific workloads, resolutions, game settings, and other system components like RAM speed.
                 </p>
               </div>
             )}
@@ -170,57 +215,19 @@ export default function BottleneckCalculatorPage() {
   );
 }
 
-// Add this to globals.css if not already handled by theme for Progress component:
-// .dark .progress-indicator-custom-color {
-//   background-color: var(--indicator-color, hsl(var(--primary)));
-// }
-// And then use indicatorClassName="progress-indicator-custom-color" in Progress component.
-// For now, direct style manipulation or specific CSS variable usage in component might be needed for ShadCN Progress indicator.
-// The current Progress component in shadcn does not easily allow dynamic color for indicator through props other than primary.
-// A workaround is to use CSS variables or customize the component.
-// For simplicity, the color of the text is changed, and the progress bar will use primary.
-// A more advanced solution would be to customize the Progress component.
-// The current Progress component sets bg-primary. I'll try setting a style var.
-// Update for Progress: The provided shadcn/ui Progress component directly styles the indicator with bg-primary.
-// A simple style prop on the Indicator might not work.
-// The text color is dynamically changed, the progress bar itself will remain themed as primary.
-// If specific indicator color is a hard requirement, `ProgressPrimitive.Indicator` would need custom styling.
-// For the provided code, I'll rely on the text color to convey severity.
-// The `Progress` component has been updated in `shadcn/ui` to accept a `value` prop which is what this code uses.
-// The color is hardcoded. This example will use text color for emphasis.
-// It seems the progress indicator color is hardcoded to `bg-primary`.
-// Let's try to use CSS variables for the progress bar color.
+interface InfoSectionProps {
+  icon: React.ElementType;
+  title: string;
+  children: React.ReactNode;
+}
 
-// In globals.css for .dark:
-// .progress-indicator { background-color: var(--indicator-color, hsl(var(--primary))); }
-// then className on ProgressPrimitive.Indicator: "progress-indicator"
-// Since this isn't straightforward with the existing Progress component, I'll style the text and leave progress bar primary.
-// The prompt indicates good use of shadcn/ui charts (which includes Progress).
-// The default `Progress` component uses `--primary` for its indicator.
-// A simple solution could be to dynamically set the `--primary` CSS variable locally for the scope of the progress bar if that's feasible,
-// or accept that the bar is always primary and the text indicates severity.
-// For this response, I will make the percentage text color dynamic and use a note.
-// The prompt indicates "accent for highlighting key elements and CTAs". So the progress bar itself could be accent.
-// The provided Progress component is `bg-primary`. If `primary` itself is changed, it will affect all primary elements.
-// I will use the percentage text color for visual cue. The Progress bar will use the theme's primary color.
-// It appears the provided progress bar code does `style={{ transform: translateX(-${100 - (value || 0)}%) }}` and `className="... bg-primary ..."`.
-// I'll stick to text color for dynamic feedback on bottleneck severity.
-// Update: I can set the color using a CSS variable on the component for the indicator color directly, if the component is modified or if I wrap it.
-// The example here will just change the text color for simplicity given the constraints.
-// The current Progress component in `components/ui/progress.tsx` uses `bg-primary` directly.
-// A simple fix is to use a local CSS variable like style={{'--custom-progress-color': getBottleneckColor(...)} as React.CSSProperties} and then use this var in the progress component.
-// But this requires modifying the progress component.
-// For this iteration, I will just color the text.
-// A better approach: use the existing `Chart` component for this, as it supports custom colors. But Progress is simpler.
-// I'll use the `style` prop on `Progress` itself, hoping it gets passed down or can influence child elements if lucky, or just stick to text.
-// The provided `Progress` component applies `bg-primary` to the indicator.
-// This is a limitation. Text color will be used for emphasis.
-// Let's make a small adjustment to the Progress component.
-// Modified Progress component to accept `indicatorClassName`
-// No, that's not in the provided code.
-// Final decision: Use text color for severity. Bar uses primary.
-// The `Progress` component is now updated to potentially use CSS vars based on `ChartStyle` if that were integrated.
-// Since it's not, and to keep it simple, the color is on text.
-// The provided `Progress` component only uses `bg-primary`. The `style` on `ProgressPrimitive.Indicator` is for transform.
-// The solution with `style={{ '--indicator-color': ...}}` would require `ProgressPrimitive.Indicator` to use `bg-[var(--indicator-color)]`.
-// For now, the text color changes.
+function InfoSection({ icon: Icon, title, children }: InfoSectionProps) {
+  return (
+    <div>
+      <h4 className="text-lg font-semibold text-accent flex items-center mb-1">
+        <Icon size={20} className="mr-2" /> {title}
+      </h4>
+      {children}
+    </div>
+  );
+}

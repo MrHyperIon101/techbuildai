@@ -1,11 +1,11 @@
+
 "use client";
 
 import React, { useState } from 'react';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import { SectionTitle } from '@/components/common/section-title';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
-import Image from 'next/image';
+import { ChevronLeft, ChevronRight, CheckCircle, Wrench, Cpu, MemoryStick, CircuitBoard, Video, HardDrive, PlugZap, Cable, Network, Power, PackageSearch } from 'lucide-react';
 import type { BuildGuideStep } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -14,8 +14,7 @@ const guideSteps: BuildGuideStep[] = [
     id: 1,
     title: "Preparation & Unboxing",
     description: "Gather your tools and components. Ensure you have an anti-static wrist strap and a clear, well-lit workspace.",
-    image: "https://placehold.co/600x400.png",
-    imageHint: "tools workspace",
+    icon: PackageSearch,
     details: [
       "Required tools: Phillips head screwdriver (magnetic tip recommended), anti-static wrist strap, zip ties or Velcro straps for cable management.",
       "Optional tools: Flashlight, wire cutters/strippers (for custom cables, rarely needed).",
@@ -27,8 +26,7 @@ const guideSteps: BuildGuideStep[] = [
     id: 2,
     title: "CPU Installation",
     description: "Install the CPU onto the motherboard. This is a delicate step, so handle with care.",
-    image: "https://placehold.co/600x400.png",
-    imageHint: "cpu motherboard",
+    icon: Cpu,
     details: [
       "Open the CPU socket lever on the motherboard.",
       "Align the CPU's arrow/triangle with the corresponding mark on the socket.",
@@ -40,8 +38,7 @@ const guideSteps: BuildGuideStep[] = [
     id: 3,
     title: "RAM Installation",
     description: "Install RAM modules into the motherboard slots.",
-    image: "https://placehold.co/600x400.png",
-    imageHint: "ram memory",
+    icon: MemoryStick,
     details: [
       "Open the clips on the RAM slots you intend to use (refer to motherboard manual for dual-channel configuration).",
       "Align the notch on the RAM module with the notch in the RAM slot.",
@@ -52,8 +49,7 @@ const guideSteps: BuildGuideStep[] = [
     id: 4,
     title: "Motherboard Installation",
     description: "Mount the motherboard into the PC case.",
-    image: "https://placehold.co/600x400.png",
-    imageHint: "motherboard case",
+    icon: CircuitBoard,
     details: [
       "Install standoffs in the PC case if they are not pre-installed.",
       "Place the I/O shield (if separate) into the case opening.",
@@ -65,8 +61,7 @@ const guideSteps: BuildGuideStep[] = [
     id: 5,
     title: "GPU Installation",
     description: "Install the graphics card into the appropriate PCI-e slot.",
-    image: "https://placehold.co/600x400.png",
-    imageHint: "gpu graphics",
+    icon: Video,
     details: [
       "Remove the PCI slot covers on the case corresponding to the PCI-e x16 slot you'll use (usually the top-most one).",
       "Open the retaining clip on the PCI-e slot.",
@@ -78,8 +73,7 @@ const guideSteps: BuildGuideStep[] = [
     id: 6,
     title: "Storage Installation (SSD/HDD)",
     description: "Install SSDs and/or HDDs into their respective drive bays.",
-    image: "https://placehold.co/600x400.png",
-    imageHint: "ssd hdd",
+    icon: HardDrive,
     details: [
       "Mount M.2 SSDs directly onto the motherboard M.2 slots and secure with the screw/clip.",
       "Mount 2.5-inch SSDs or 3.5-inch HDDs into drive bays/cages.",
@@ -90,8 +84,7 @@ const guideSteps: BuildGuideStep[] = [
     id: 7,
     title: "Power Supply (PSU) Installation",
     description: "Place the PSU into its bay and connect main power cables.",
-    image: "https://placehold.co/600x400.png",
-    imageHint: "psu power",
+    icon: PlugZap,
     details: [
       "Place the PSU in its designated bay (usually bottom or top rear of the case).",
       "Secure with screws from the outside of the case.",
@@ -102,8 +95,7 @@ const guideSteps: BuildGuideStep[] = [
     id: 8,
     title: "Connecting Cables",
     description: "Connect all necessary power and data cables. This is often the most complex part.",
-    image: "https://placehold.co/600x400.png",
-    imageHint: "cables wiring",
+    icon: Cable,
     details: [
       "Connect the 24-pin ATX power connector to the motherboard.",
       "Connect the CPU power connector (4+4 pin or 8-pin) to the motherboard.",
@@ -117,8 +109,7 @@ const guideSteps: BuildGuideStep[] = [
     id: 9,
     title: "Cable Management",
     description: "Organize cables for better airflow and aesthetics.",
-    image: "https://placehold.co/600x400.png",
-    imageHint: "cable management",
+    icon: Network, // Representing organized connections
     details: [
       "Route cables behind the motherboard tray where possible.",
       "Use zip ties or Velcro straps to bundle cables together.",
@@ -130,8 +121,7 @@ const guideSteps: BuildGuideStep[] = [
     id: 10,
     title: "First Boot & OS Installation",
     description: "Perform the initial boot-up, check BIOS/UEFI, and install your operating system.",
-    image: "https://placehold.co/600x400.png",
-    imageHint: "bios software",
+    icon: Power,
     details: [
       "Connect monitor, keyboard, mouse, and power cable.",
       "Turn on the PC. Enter BIOS/UEFI (usually by pressing DEL or F2 key on startup).",
@@ -147,6 +137,7 @@ const guideSteps: BuildGuideStep[] = [
 export default function PcBuildGuidePage() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const currentStep = guideSteps[currentStepIndex];
+  const CurrentIcon = currentStep.icon;
 
   const goToNextStep = () => {
     setCurrentStepIndex((prev) => Math.min(prev + 1, guideSteps.length - 1));
@@ -166,18 +157,10 @@ export default function PcBuildGuidePage() {
           </GlassCardTitle>
         </GlassCardHeader>
         <GlassCardContent className="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="relative aspect-video rounded-lg overflow-hidden shadow-lg group">
-            {currentStep.image && (
-              <Image
-                src={currentStep.image}
-                alt={currentStep.title}
-                layout="fill"
-                objectFit="cover"
-                className="transition-transform duration-500 group-hover:scale-105"
-                data-ai-hint={currentStep.imageHint}
-              />
+          <div className="relative aspect-video rounded-lg overflow-hidden shadow-lg group bg-muted/20 flex items-center justify-center">
+            {CurrentIcon && (
+              <CurrentIcon size={128} className="text-primary opacity-70 group-hover:opacity-100 transition-opacity duration-300" />
             )}
-             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
           </div>
           
           <ScrollArea className="h-[300px] lg:h-[400px] pr-3">

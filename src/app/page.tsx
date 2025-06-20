@@ -1,8 +1,8 @@
+
 import { Button } from '@/components/ui/button';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import Link from 'next/link';
-import { ArrowRight, BarChart, Bot, Cpu, Wrench } from 'lucide-react';
-import Image from 'next/image';
+import { ArrowRight, BarChart, Bot, Cpu, Wrench, PcCase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function HomePage() {
@@ -48,17 +48,9 @@ export default function HomePage() {
           href="/build-guide"
           className="md:col-span-2 lg:col-span-1"
         />
-         <GlassCard className="md:col-span-2 lg:col-span-2 p-0 overflow-hidden relative group">
-          <Image 
-            src="https://placehold.co/800x400.png" 
-            alt="Modern PC setup" 
-            data-ai-hint="computer gaming"
-            width={800}
-            height={400}
-            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-           <div className="absolute bottom-0 left-0 p-6">
+         <GlassCard className="md:col-span-2 lg:col-span-2 p-6 overflow-hidden relative group flex flex-col items-center justify-center min-h-[250px] text-center">
+          <PcCase size={80} className="text-primary opacity-70 mb-4 group-hover:opacity-100 transition-opacity duration-300" />
+           <div className="relative z-10">
             <h3 className="text-2xl font-headline font-semibold text-white">Build Your Dream Rig</h3>
             <p className="text-neutral-300 mt-1">Start your journey with TechBuild AI today.</p>
           </div>

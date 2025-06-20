@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -12,16 +13,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'placehold.co',
+        hostname: 'www.notebookcheck.net', // Kept for existing images if any, can be removed if all images are local/icons
         port: '',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'www.notebookcheck.net',
-        port: '',
-        pathname: '/**',
-      },
+      // placehold.co removed as placeholders are replaced by icons
     ],
   },
 };
