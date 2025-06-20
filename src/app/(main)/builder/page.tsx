@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { handleSuggestPcBuild } from '@/lib/actions';
 import type { BuildSuggestion, PCComponent } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
-import { AlertCircle, CheckCircle, ShoppingCart, BarChart3 } from 'lucide-react';
+import { AlertCircle, CheckCircle, ShoppingCart, BarChart3, Bot } from 'lucide-react';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
