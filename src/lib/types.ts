@@ -20,7 +20,8 @@ export type FeatureArea =
   | 'furmark-scores'
   | 'pcmark-scores'
   | 'geekbench-scores'
-  | 'aida64-scores';
+  | 'aida64-scores'
+  | 'userbenchmark-scores';
 
 export interface PCComponent {
   name: string;
@@ -204,4 +205,19 @@ export interface Aida64ScoresOutput {
   dataSourceNotes?: string;
 }
 
+export interface UserBenchmarkScoreEntry {
+  componentName: string;
+  componentType: string; // e.g., "CPU", "GPU", "SSD", "RAM"
+  gamingPercentage?: number;
+  desktopPercentage?: number;
+  workstationPercentage?: number;
+  averageBench?: number; // This is a key UserBenchmark metric
+  rank?: string; // e.g., "15th / 1300"
+  notes?: string;
+}
+
+export interface UserBenchmarkScoresOutput {
+  scores: UserBenchmarkScoreEntry[];
+  dataSourceNotes?: string;
+}
     

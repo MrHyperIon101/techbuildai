@@ -11,6 +11,7 @@ import { getFurMarkScores, GetFurMarkScoresInput } from '@/ai/flows/get-furmark-
 import { getPCMarkScores, GetPCMarkScoresInput } from '@/ai/flows/get-pcmark-scores';
 import { getGeekbenchScores, GetGeekbenchScoresInput } from '@/ai/flows/get-geekbench-scores';
 import { getAida64Scores, GetAida64ScoresInput } from '@/ai/flows/get-aida64-scores';
+import { getUserBenchmarkScores, GetUserBenchmarkScoresInput } from '@/ai/flows/get-userbenchmark-scores';
 
 
 import type { 
@@ -23,7 +24,8 @@ import type {
     FurMarkScoresOutput,
     PCMarkScoresOutput,
     GeekbenchScoresOutput,
-    Aida64ScoresOutput
+    Aida64ScoresOutput,
+    UserBenchmarkScoresOutput
 } from './types';
 
 export async function handleSuggestPcBuild(input: SuggestPcBuildInput): Promise<BuildSuggestion> {
@@ -200,4 +202,19 @@ export async function handleGetAida64Scores(input: GetAida64ScoresInput): Promis
   }
 }
 
+export async function handleGetUserBenchmarkScores(input: GetUserBenchmarkScoresInput): Promise<UserBenchmarkScoresOutput> {
+  try {
+    const result = await getUserBenchmarkScores(input);
+    if (result && !Array.isArray(result.scores)) {
+      result.scores = [];
+    }
+    return result as UserBenchmarkScoresOutput;
+  } catch (error) {
+    console.error("Error in handleGetUserBenchmarkScores:", error);
+    if (error instanceof Error && error.message.includes("AI response did not match")) {
+        throw error;
+    }
+    throw new Error("Failed to retrieve UserBenchmark scores. The AI may have had trouble interpreting the component name or the requested format. Please try again or refine your search term.");
+  }
+}
     
