@@ -93,7 +93,7 @@ export default function HomePage() {
           </Button>
         </Link>
         <p className="text-sm text-muted-foreground mt-6">
-          &copy; {new Date().getFullYear()} TechBuild AI. All rights reserved.
+          &copy; {new Date().getFullYear()} Made by Souvik Bagchi.
         </p>
       </footer>
     </div>
