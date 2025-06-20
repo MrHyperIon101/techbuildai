@@ -30,8 +30,6 @@ const GetCinebenchScoresOutputSchema = z.object({
   scores: z.array(CinebenchScoreEntrySchema).describe('A list of Cinebench score entries.'),
   dataSourceNotes: z.string().optional().describe('General notes about the data source, e.g., "Scores compiled from various tech review sites. Performance can vary based on system configuration and test conditions."'),
 });
-// We use the imported type for the function signature for consistency with other flows
-// export type GetCinebenchScoresOutput = z.infer<typeof GetCinebenchScoresOutputSchema>;
 
 
 export async function getCinebenchScores(input: GetCinebenchScoresInput): Promise<CinebenchScoresOutput> {
@@ -44,29 +42,63 @@ const prompt = ai.definePrompt({
   output: {schema: GetCinebenchScoresOutputSchema},
   prompt: `You are a PC hardware data specialist. Your task is to provide Cinebench scores.
 Focus on Cinebench R23 scores as a primary reference. If R23 is unavailable for a specific CPU, you may provide scores from another recent Cinebench version (e.g., Cinebench 2024) and clearly state the version.
+The singleCoreScore and multiCoreScore fields MUST be NUMBERS (integers), not strings.
 
 {{#if cpuName}}
 For the CPU: {{{cpuName}}}
-- Provide its Cinebench R23 single-core score.
-- Provide its Cinebench R23 multi-core score.
+- Provide its Cinebench R23 single-core score (as a number).
+- Provide its Cinebench R23 multi-core score (as a number).
 - Specify the Cinebench version if not R23.
 - Add any brief, relevant notes (e.g., common score range, or if data is from a specific prominent review site).
 If the exact CPU is not found, state that clearly in the notes for that entry and do not attempt to guess.
-Return a single entry in the 'scores' array.
+The output should be a JSON object with a 'scores' array containing a single entry for this CPU, and a 'dataSourceNotes' string.
+Example for a specific CPU:
+{
+  "scores": [
+    {
+      "cpuName": "Intel Core i9-13900K",
+      "cinebenchVersion": "R23",
+      "singleCoreScore": 2250,
+      "multiCoreScore": 38000,
+      "notes": "Typical score, may vary."
+    }
+  ],
+  "dataSourceNotes": "Cinebench scores can vary based on test conditions, system configuration (RAM, cooling), and software. Data compiled from publicly available information and tech reviews."
+}
 {{else}}
-Provide a list of Cinebench R23 scores for 5-7 popular and relatively recent desktop CPUs from both Intel (e.g., Core i5, i7, i9 series) and AMD (e.g., Ryzen 5, 7, 9 series).
-For each CPU:
+Provide a list of Cinebench R23 scores for 5-7 popular and relatively recent desktop CPUs from both Intel (e.g., Core i5, i7, i9 series) and AMD (e.g., Ryzen 5, 7, 9 series). These are often considered 'top CPUs'.
+For each CPU in the list:
 - Provide its full name.
-- Provide its Cinebench R23 single-core score.
-- Provide its Cinebench R23 multi-core score.
+- Provide its Cinebench R23 single-core score (as a number).
+- Provide its Cinebench R23 multi-core score (as a number).
 - Specify the Cinebench version if not R23 for any particular CPU.
 Return these as multiple entries in the 'scores' array.
+Example for a general list:
+{
+  "scores": [
+    {
+      "cpuName": "AMD Ryzen 9 7950X",
+      "cinebenchVersion": "R23",
+      "singleCoreScore": 2050,
+      "multiCoreScore": 38500,
+      "notes": "High-end performance."
+    },
+    {
+      "cpuName": "Intel Core i7-13700K",
+      "cinebenchVersion": "R23",
+      "singleCoreScore": 2080,
+      "multiCoreScore": 30500
+    }
+  ],
+  "dataSourceNotes": "Cinebench scores can vary based on test conditions, system configuration (RAM, cooling), and software. Data compiled from publicly available information and tech reviews."
+}
 {{/if}}
 
 For all requests:
-- Ensure scores are positive integers.
-- The 'dataSourceNotes' field should contain a general disclaimer like "Cinebench scores can vary based on test conditions, system configuration (RAM, cooling), and software. Data compiled from publicly available information and tech reviews."
-- If you cannot find reliable data for a specific CPU, you can omit it or return an empty scores array with a dataSourceNote explaining the difficulty.
+- Ensure all score fields (singleCoreScore, multiCoreScore) are positive integers.
+- The 'dataSourceNotes' field should always be populated with a general disclaimer like "Cinebench scores can vary based on test conditions, system configuration (RAM, cooling), and software. Data compiled from publicly available information and tech reviews."
+- If you cannot find reliable data for a specific CPU (when cpuName is provided), its entry in the 'scores' array should still be present but can indicate missing data in its 'notes' field, or return an empty 'scores' array with an explanation in 'dataSourceNotes'.
+- For the general list (no cpuName), if you cannot find 5-7 CPUs, provide as many as you can reliably find. If no CPUs can be found for the general list, return an empty 'scores' array.
 - Do not invent scores. If data is sparse or conflicting for a less common CPU, it's better to indicate that.
 `,
 });
@@ -78,17 +110,44 @@ const getCinebenchScoresFlow = ai.defineFlow(
     outputSchema: GetCinebenchScoresOutputSchema,
   },
   async (input: GetCinebenchScoresInput): Promise<CinebenchScoresOutput> => {
-    const {output, usage} = await prompt(input);
-    if (!output || !output.scores) {
-        console.error("AI failed to return valid Cinebench scores. Input was:", input, "Usage data:", usage);
-        // Provide a default empty state that matches the schema to avoid downstream errors
-        return {
-            scores: [],
-            dataSourceNotes: "AI was unable to retrieve Cinebench scores for the given input. Please try a different CPU or a general search."
-        };
+    try {
+      const {output, usage} = await prompt(input);
+
+      if (!output || !output.scores || !Array.isArray(output.scores)) {
+          console.warn("AI output for Cinebench scores was null, undefined, or scores was not an array. Input:", input, "Usage:", usage, "Output received:", output);
+          const scoresArray = (output && Array.isArray(output.scores)) ? output.scores : [];
+          return {
+              scores: scoresArray.map(score => ({ // Attempt to sanitize even if structure is off
+                cpuName: String(score.cpuName || 'Unknown CPU'),
+                cinebenchVersion: String(score.cinebenchVersion || 'N/A'),
+                singleCoreScore: Number(score.singleCoreScore) || 0,
+                multiCoreScore: Number(score.multiCoreScore) || 0,
+                notes: String(score.notes || '')
+              })).filter(s => s.cpuName !== 'Unknown CPU'),
+              dataSourceNotes: output?.dataSourceNotes || "AI was unable to retrieve Cinebench scores in the expected format. Please try a different CPU or a general search."
+          };
+      }
+      
+      const validatedScores = output.scores.map(score => ({
+        cpuName: String(score.cpuName || 'Unknown CPU'),
+        cinebenchVersion: String(score.cinebenchVersion || 'N/A'),
+        singleCoreScore: Number(score.singleCoreScore) || 0,
+        multiCoreScore: Number(score.multiCoreScore) || 0,
+        notes: score.notes ? String(score.notes) : undefined,
+      })).filter(score => score.cpuName && score.cpuName !== 'Unknown CPU' && score.multiCoreScore > 0); // Ensure basic validity
+
+      return {
+        scores: validatedScores,
+        dataSourceNotes: output.dataSourceNotes || "Data compiled from various sources. Accuracy may vary."
+      };
+
+    } catch (error) {
+      console.error("Error during getCinebenchScoresFlow execution:", error, "Input was:", input);
+      return {
+          scores: [],
+          dataSourceNotes: "An error occurred while fetching Cinebench scores from the AI. Please try again later or specify a CPU model."
+      };
     }
-    // Ensure scores is always an array, even if AI returns something else.
-    output.scores = Array.isArray(output.scores) ? output.scores : [];
-    return output;
   }
 );
+
