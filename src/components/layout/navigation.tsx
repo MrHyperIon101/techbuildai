@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import {
   Home, Cpu, Search as AnalysisIcon, BookOpen, History, Bot, ShieldCheck,
   BarChart3, BarChartHorizontalBig, Flame, Gauge, Brain, ClipboardList, Users,
-  ChevronUp
+  ChevronUp, MoreHorizontal
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from '@/components/ui/button';
 
 const primaryNavItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -36,27 +37,21 @@ const moreNavItems = [
   { href: '/userbenchmark-scores', label: 'UserBench', icon: Users },
 ];
 
-const NavLink = ({ href, label, icon: Icon, isActive, isDropdownTrigger = false }: { href?: string, label: string, icon: React.ElementType, isActive?: boolean, isDropdownTrigger?: boolean }) => {
-  const commonClasses = cn(
-    'flex flex-col items-center justify-center p-1.5 rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20 shrink-0',
-    'w-16 h-16 md:w-auto md:h-12', // Adjusted base size for readability
-    'md:flex-row md:px-3 md:py-1.5',
-    isActive && !isDropdownTrigger ? 'bg-primary text-primary-foreground shadow-md' : 'text-foreground hover:text-primary',
-  );
+// Base classes for consistent styling of all nav items (links and the "More" trigger button)
+const navItemBaseClasses = cn(
+  'flex flex-col items-center justify-center p-1 rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20 shrink-0',
+  'w-16 h-16 md:w-auto md:h-12', // Default size
+  'md:flex-row md:px-3 md:py-1.5' // Desktop layout adjustments
+);
 
-  if (isDropdownTrigger) {
-    return (
-      <div className={commonClasses} role="button" tabIndex={0} aria-haspopup="menu">
-        <Icon className="w-5 h-5 md:w-4 shrink-0" />
-        <span className="text-[10px] mt-0.5 md:mt-0 md:text-xs md:ml-1.5 font-medium whitespace-nowrap">{label}</span>
-      </div>
-    );
-  }
-
+const NavLink = ({ href, label, icon: Icon, isActive }: { href: string, label: string, icon: React.ElementType, isActive: boolean }) => {
   return (
     <Link
-      href={href!} // href will be defined if not a dropdown trigger
-      className={commonClasses}
+      href={href}
+      className={cn(
+        navItemBaseClasses,
+        isActive ? 'bg-primary text-primary-foreground shadow-md' : 'text-foreground hover:text-primary',
+      )}
       aria-current={isActive ? 'page' : undefined}
     >
       <Icon className="w-5 h-5 md:w-4 shrink-0" />
@@ -82,12 +77,12 @@ const DropdownNavLink = ({ href, label, icon: Icon, isActive }: { href: string, 
 
 export function Navigation() {
   const pathname = usePathname();
+  const isMoreMenuActive = moreNavItems.some(item => pathname.startsWith(item.href));
 
   return (
     <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-[95vw] md:max-w-max">
-      <div className="flex items-center justify-center bg-card/70 backdrop-blur-md border border-primary/30 shadow-2xl rounded-full p-1 md:p-1.5 space-x-1 md:space-x-1.5 overflow-x-auto no-scrollbar">
+      <div className="flex items-center justify-center bg-card/70 backdrop-blur-md border border-primary/30 shadow-2xl rounded-full p-1 md:p-1.5 space-x-0.5 md:space-x-1 overflow-x-auto no-scrollbar">
         {primaryNavItems.map((item) => {
-          // Active if it's the homepage and path is exactly '/', or for other pages, if path starts with item.href
           const isActive = (item.href === '/' && pathname === '/') || 
                            (item.href !== '/' && pathname.startsWith(item.href));
           return (
@@ -104,12 +99,16 @@ export function Navigation() {
         {moreNavItems.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <NavLink
-                isDropdownTrigger // This now uses the NavLink styling for the trigger
-                label="More"
-                icon={ChevronUp}
-                // isActive can be determined if any of moreNavItems is active, but simpler to keep it neutral
-              />
+              <Button
+                variant="ghost" // Use ghost variant to remove default button styling
+                className={cn(
+                  navItemBaseClasses, // Apply the same base classes
+                  isMoreMenuActive ? 'bg-primary/15 text-primary shadow-sm' : 'text-foreground hover:text-primary' // Style for non-active/active item
+                )}
+              >
+                <ChevronUp className="w-5 h-5 md:w-4 shrink-0" />
+                <span className="text-[10px] mt-0.5 md:mt-0 md:text-xs md:ml-1.5 font-medium whitespace-nowrap">More</span>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top" className="mb-2 w-56 bg-card/90 backdrop-blur-md border-primary/30">
               {moreNavItems.map((item) => {
