@@ -121,7 +121,7 @@ export default function ComponentDetailsPage() {
             </GlassCardHeader>
             <GlassCardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-1">
-                {details.imageUrl ? (
+                {details.imageUrl && typeof details.imageUrl === 'string' && details.imageUrl.trim() !== '' ? (
                   <div className="relative aspect-square rounded-lg overflow-hidden shadow-lg">
                     <Image src={details.imageUrl} alt={details.componentNameFromAI || searchedComponentName} layout="fill" objectFit="contain" data-ai-hint="component hardware"/>
                   </div>
@@ -144,7 +144,7 @@ export default function ComponentDetailsPage() {
                   )}
                 </div>
 
-                {details.keyFeatures && details.keyFeatures.length > 0 && (
+                {details.keyFeatures && details.keyFeatures.length > 0 ? (
                   <div>
                     <h3 className="text-xl font-semibold text-accent mb-2 flex items-center">
                        <ListChecks size={20} className="mr-2"/> Key Features
@@ -155,8 +155,7 @@ export default function ComponentDetailsPage() {
                       ))}
                     </ul>
                   </div>
-                )}
-                 {!details.keyFeatures || details.keyFeatures.length === 0 && (
+                ) : (
                   <div>
                     <h3 className="text-xl font-semibold text-accent mb-2 flex items-center">
                        <ListChecks size={20} className="mr-2"/> Key Features
