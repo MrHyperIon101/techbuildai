@@ -16,7 +16,7 @@ import { handleGetComponentDetails } from '@/lib/actions';
 import type { ComponentDetails, ComponentTechnicalCategory, ShoppingLink } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Cpu, ShoppingCart, ExternalLink, ImageOff, ListChecks, Zap } from 'lucide-react';
+import { Cpu, ShoppingCart, ExternalLink, ImageOff, ListChecks, Zap, Info } from 'lucide-react';
 import Image from 'next/image';
 
 const componentSearchSchema = z.object({
@@ -137,7 +137,11 @@ export default function ComponentDetailsPage() {
                   <h3 className="text-xl font-semibold text-accent mb-2 flex items-center">
                     <Zap size={20} className="mr-2"/> Overall Summary
                   </h3>
-                  <p className="text-foreground/90 prose prose-sm prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: details.overallSummary.replace(/\n/g, '<br />') }} />
+                  {details.overallSummary ? (
+                     <p className="text-foreground/90 prose prose-sm prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: details.overallSummary.replace(/\n/g, '<br />') }} />
+                  ) : (
+                    <p className="text-muted-foreground italic">Overall summary not available.</p>
+                  )}
                 </div>
 
                 {details.keyFeatures && details.keyFeatures.length > 0 && (
@@ -152,11 +156,19 @@ export default function ComponentDetailsPage() {
                     </ul>
                   </div>
                 )}
+                 {!details.keyFeatures || details.keyFeatures.length === 0 && (
+                  <div>
+                    <h3 className="text-xl font-semibold text-accent mb-2 flex items-center">
+                       <ListChecks size={20} className="mr-2"/> Key Features
+                    </h3>
+                    <p className="text-muted-foreground italic">Key features not available.</p>
+                  </div>
+                )}
               </div>
             </GlassCardContent>
           </GlassCard>
 
-          {details.technicalCategories && details.technicalCategories.length > 0 && (
+          {details.technicalCategories && details.technicalCategories.length > 0 ? (
             <GlassCard>
               <GlassCardHeader>
                 <GlassCardTitle>Technical Specifications</GlassCardTitle>
@@ -165,21 +177,37 @@ export default function ComponentDetailsPage() {
                 {details.technicalCategories.map((category, catIndex) => (
                   <div key={catIndex} className="break-inside-avoid">
                     <h4 className="text-lg font-semibold text-primary mb-2 border-b border-primary/20 pb-1">{category.category}</h4>
-                    <ul className="space-y-1 text-sm">
-                      {category.specs.map((spec, specIndex) => (
-                        <li key={specIndex} className="flex justify-between">
-                          <span className="text-muted-foreground">{spec.spec}:</span>
-                          <span className="text-foreground/90 text-right">{spec.value}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {category.specs && category.specs.length > 0 ? (
+                      <ul className="space-y-1 text-sm">
+                        {category.specs.map((spec, specIndex) => (
+                          <li key={specIndex} className="flex justify-between">
+                            <span className="text-muted-foreground">{spec.spec}:</span>
+                            <span className="text-foreground/90 text-right">{spec.value}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                       <p className="text-sm text-muted-foreground italic">No specifications listed for this category.</p>
+                    )}
                   </div>
                 ))}
               </GlassCardContent>
             </GlassCard>
+          ) : (
+             <GlassCard>
+                <GlassCardHeader>
+                    <GlassCardTitle>Technical Specifications</GlassCardTitle>
+                </GlassCardHeader>
+                <GlassCardContent>
+                    <div className="flex items-center text-muted-foreground">
+                        <Info size={20} className="mr-2" />
+                        <p>Detailed technical specifications are not available for this component.</p>
+                    </div>
+                </GlassCardContent>
+            </GlassCard>
           )}
           
-          {details.shoppingLinks && details.shoppingLinks.length > 0 && (
+          {details.shoppingLinks && details.shoppingLinks.length > 0 ? (
             <GlassCard>
               <GlassCardHeader>
                 <GlassCardTitle>Shopping Links (India)</GlassCardTitle>
@@ -205,9 +233,22 @@ export default function ComponentDetailsPage() {
                 ))}
               </GlassCardContent>
             </GlassCard>
+          ) : (
+            <GlassCard>
+                <GlassCardHeader>
+                    <GlassCardTitle>Shopping Links (India)</GlassCardTitle>
+                </GlassCardHeader>
+                <GlassCardContent>
+                     <div className="flex items-center text-muted-foreground">
+                        <Info size={20} className="mr-2" />
+                        <p>Shopping links are not available for this component.</p>
+                    </div>
+                </GlassCardContent>
+            </GlassCard>
           )}
         </div>
       )}
     </div>
   );
 }
+

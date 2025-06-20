@@ -37,9 +37,9 @@ const ShoppingLinkSchema = z.object({
 
 const GetComponentDetailsOutputSchema = z.object({
   componentNameFromAI: z.string().optional().describe("The full name of the component as identified by the AI, if different from input or more specific."),
-  overallSummary: z.string().describe('A concise textual summary of the component, highlighting its main purpose and standing.'),
+  overallSummary: z.string().optional().describe('A concise textual summary of the component, highlighting its main purpose and standing.'),
   keyFeatures: z.array(z.string()).optional().describe("A list of 3-5 key features of the component."),
-  technicalCategories: z.array(ComponentTechnicalCategorySchema).optional().describe("Detailed technical specifications, grouped by category (e.g., 'Core Specs', 'Memory', 'Power')."),
+  technicalCategories: z.array(ComponentTechnicalCategorySchema).optional().describe("Detailed technical specifications, grouped by category (e.g., 'Core Specs', 'Memory', 'Connectivity')."),
   shoppingLinks: z.array(ShoppingLinkSchema).optional().describe("Shopping links from Indian e-commerce sites like amazon.in or flipkart.com. Include price in INR if available."),
   imageUrl: z.string().url().optional().describe("A publicly accessible URL for a representative image of the component (optional)."),
 });
@@ -59,7 +59,7 @@ The JSON object must conform to the output schema provided.
 
 Key details to include:
 - componentNameFromAI: The full, official name of the component.
-- overallSummary: A concise summary (2-3 sentences).
+- overallSummary: A concise summary (2-3 sentences). If a summary cannot be generated, this field can be omitted.
 - keyFeatures: A list of 3-5 prominent features.
 - technicalCategories: Group specifications into relevant categories like "Core Specifications", "Memory", "Connectivity", "Power Requirements", "Physical Dimensions". Each category should have a list of spec-value pairs.
 - shoppingLinks: Provide 1-2 direct product links from amazon.in or flipkart.com. Include the current price in INR (e.g., "₹XX,XXX") if readily available.

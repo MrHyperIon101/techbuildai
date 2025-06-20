@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Cpu, Search, BookOpen, History, Bot } from 'lucide-react'; // Removed Info, it's not used
+import { Home, Cpu, Search, BookOpen, History, Bot } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -28,7 +28,9 @@ export function Navigation() {
               href={item.href}
               key={item.href}
               className={cn(
-                'flex flex-col items-center justify-center p-2 rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20 aspect-square w-16 h-16 sm:w-20 sm:h-20 md:h-12 md:w-auto md:min-w-[5rem] md:flex-row md:px-4 md:py-2 md:space-x-2',
+                'flex flex-col items-center justify-center p-2 rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20',
+                'w-16 h-16 aspect-square', // Base size for smallest screens (vertical layout)
+                'md:aspect-auto md:w-auto md:h-12 md:flex-row md:px-4 md:py-2 md:space-x-2', // Medium screens and up (horizontal layout)
                 isActive ? 'bg-primary text-primary-foreground shadow-md' : 'text-foreground hover:text-primary',
               )}
               aria-current={isActive ? 'page' : undefined}
