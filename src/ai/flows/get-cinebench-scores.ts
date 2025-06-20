@@ -50,8 +50,8 @@ For the CPU: {{{cpuName}}}
 - Provide its Cinebench R23 multi-core score (as a number).
 - Specify the Cinebench version if not R23.
 - Add any brief, relevant notes (e.g., common score range, or if data is from a specific prominent review site).
-If the exact CPU is not found, state that clearly in the notes for that entry and do not attempt to guess.
-The output should be a JSON object with a 'scores' array containing a single entry for this CPU, and a 'dataSourceNotes' string.
+If the exact CPU is not found, state that clearly in the notes for that entry and do not attempt to guess. Return an empty 'scores' array and explain in 'dataSourceNotes' if no data is found.
+The output should be a JSON object with a 'scores' array containing a single entry for this CPU (or an empty array if not found), and a 'dataSourceNotes' string.
 Example for a specific CPU:
 {
   "scores": [
@@ -111,6 +111,7 @@ Example for general list:
   "dataSourceNotes": "Cinebench scores are indicative and can vary based on system configuration, cooling, and test conditions. Data compiled from publicly available information and tech reviews. This is a sample list of recent/popular CPUs."
 }
 Ensure the 'scores' array contains these entries and all score fields are positive integers.
+IMPORTANT: If you cannot reliably generate this list of CPUs and their scores as requested, you MUST still return a valid JSON object according to the schema, with an empty 'scores' array and provide an explanation or alternative guidance in the 'dataSourceNotes' field. Do not return an error or malformed JSON.
 {{/if}}
 
 For all requests:
@@ -149,16 +150,16 @@ const getCinebenchScoresFlow = ai.defineFlow(
         singleCoreScore: Number(score.singleCoreScore) || 0,
         multiCoreScore: Number(score.multiCoreScore) || 0,
         notes: score.notes ? String(score.notes) : undefined,
-      })).filter(score => score.cpuName && score.cpuName !== 'Unknown CPU' && score.multiCoreScore > 0 ); // Scores must be positive
+      })).filter(score => score.cpuName && score.cpuName !== 'Unknown CPU' && score.multiCoreScore > 0 );
 
       let notes = output.dataSourceNotes;
-      if (!input.cpuName) { // General list scenario
+      if (!input.cpuName) { 
         if (validatedScores.length > 0) {
           notes = output.dataSourceNotes || "Cinebench scores are indicative and can vary based on system configuration, cooling, and test conditions. Data compiled from publicly available information. This is a sample list of recent/popular CPUs.";
         } else {
-          notes = output.dataSourceNotes || "AI was unable to generate a list of top CPU scores at this time. Please try searching for a specific CPU.";
+          notes = output.dataSourceNotes || "AI attempted to generate a list of top CPU scores but could not find sufficient data at this time. Please try searching for a specific CPU or check reputable review sites for general comparisons.";
         }
-      } else { // Specific CPU search scenario
+      } else { 
         if (validatedScores.length > 0) {
            notes = output.dataSourceNotes || "Cinebench scores can vary based on test conditions, system configuration (RAM, cooling), and software. Data compiled from publicly available information and tech reviews.";
         } else {
