@@ -115,9 +115,8 @@ export interface CinebenchScoreEntry {
   cpuName: string;
   r23SingleCoreScore: number;
   r23MultiCoreScore: number;
-  r24SingleCoreScore?: number; // Optional, as R24 is newer
-  r24MultiCoreScore?: number; // Optional
-  notes?: string;
+  r24SingleCoreScore?: number;
+  r24MultiCoreScore?: number;
 }
 
 export interface CinebenchScoresOutput {
@@ -136,3 +135,4 @@ export interface Gpu3dMarkScoresOutput {
   scores: Gpu3dMarkScoreEntry[];
   dataSourceNotes?: string;
 }
+

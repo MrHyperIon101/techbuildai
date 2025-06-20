@@ -24,7 +24,7 @@ const searchSchema = z.object({
 });
 type SearchFormValues = z.infer<typeof searchSchema>;
 
-type SortKey = keyof CinebenchScoreEntry | '';
+type SortKey = keyof Omit<CinebenchScoreEntry, 'notes'> | ''; // Exclude 'notes'
 type SortOrder = 'asc' | 'desc';
 
 function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'r23MultiCoreScore' }: { scores: CinebenchScoreEntry[], dataSourceNotes?: string, initialSortKey?: SortKey }) {
@@ -35,17 +35,16 @@ function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'r23Mult
     const sorted = [...scores];
     if (sortKey) {
       sorted.sort((a, b) => {
-        const valA = a[sortKey as keyof CinebenchScoreEntry] as number | string | undefined;
-        const valB = b[sortKey as keyof CinebenchScoreEntry] as number | string | undefined;
+        const valA = a[sortKey as keyof Omit<CinebenchScoreEntry, 'notes'>] as number | string | undefined;
+        const valB = b[sortKey as keyof Omit<CinebenchScoreEntry, 'notes'>] as number | string | undefined;
 
-        // Handle undefined scores by treating them as lowest for sorting
         const numA = typeof valA === 'number' ? valA : (sortOrder === 'asc' ? Infinity : -Infinity);
         const numB = typeof valB === 'number' ? valB : (sortOrder === 'asc' ? Infinity : -Infinity);
 
-        if (typeof valA === 'number' || valA === undefined) { // Sort numerically if numbers or undefined
+        if (typeof valA === 'number' || valA === undefined) {
           return sortOrder === 'asc' ? numA - numB : numB - numA;
         }
-        if (typeof valA === 'string' && typeof valB === 'string') { // Sort strings alphabetically
+        if (typeof valA === 'string' && typeof valB === 'string') {
           return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
         }
         return 0;
@@ -101,7 +100,6 @@ function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'r23Mult
               <TableHead className="cursor-pointer group hover:bg-muted/50 min-w-[120px]" onClick={() => handleSort('r24MultiCoreScore')}>
                 <div className="flex items-center">R24 Multi {renderSortIcon('r24MultiCoreScore')}</div>
               </TableHead>
-              <TableHead className="min-w-[150px]">Notes</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -112,7 +110,6 @@ function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'r23Mult
                 <TableCell className="text-accent font-semibold">{score.r23MultiCoreScore > 0 ? score.r23MultiCoreScore.toLocaleString() : 'N/A'}</TableCell>
                 <TableCell className="text-accent">{score.r24SingleCoreScore && score.r24SingleCoreScore > 0 ? score.r24SingleCoreScore.toLocaleString() : 'N/A'}</TableCell>
                 <TableCell className="text-accent font-semibold">{score.r24MultiCoreScore && score.r24MultiCoreScore > 0 ? score.r24MultiCoreScore.toLocaleString() : 'N/A'}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{score.notes || 'N/A'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -132,11 +129,11 @@ function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'r23Mult
 export default function CinebenchScoresPage() {
   const [isLoadingTopCpus, setIsLoadingTopCpus] = useState(false);
   const [topCpuScoresOutput, setTopCpuScoresOutput] = useState<CinebenchScoresOutput | null>(null);
-  
+
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [searchResultOutput, setSearchResultOutput] = useState<CinebenchScoresOutput | null>(null);
   const [searchedQuery, setSearchedQuery] = useState<string | null>(null);
-  
+
   const { toast } = useToast();
   const { addMessage } = useConversation();
 
@@ -166,7 +163,7 @@ export default function CinebenchScoresPage() {
       setIsLoadingTopCpus(false);
     }
   };
-  
+
   useEffect(() => {
     fetchTopCpuScores();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -174,9 +171,9 @@ export default function CinebenchScoresPage() {
 
   const onSearchSubmit: SubmitHandler<SearchFormValues> = async (data) => {
     setIsLoadingSearch(true);
-    setSearchResultOutput(null); 
+    setSearchResultOutput(null);
     const queryInput = data?.cpuName?.trim() || "";
-    
+
     if (!queryInput) {
         toast({
             title: "Empty Search",
@@ -187,7 +184,7 @@ export default function CinebenchScoresPage() {
         setSearchedQuery(null);
         return;
     }
-    
+
     setSearchedQuery(queryInput);
     addMessage({ type: 'user', feature: 'cinebench-scores', content: `Search Cinebench scores for: ${queryInput}` });
 
@@ -208,7 +205,7 @@ export default function CinebenchScoresPage() {
       setIsLoadingSearch(false);
     }
   };
-  
+
   return (
     <div className="space-y-8">
       <SectionTitle>Cinebench CPU Scores (R23 & R24)</SectionTitle>
@@ -232,7 +229,7 @@ export default function CinebenchScoresPage() {
           )}
         </GlassCardContent>
       </GlassCard>
-      
+
       <GlassCard>
         <GlassCardHeader>
           <GlassCardTitle>Search Specific CPU Benchmarks</GlassCardTitle>
@@ -293,7 +290,7 @@ export default function CinebenchScoresPage() {
           </GlassCardContent>
         </GlassCard>
       )}
-      
+
       {!isLoadingSearch && !searchResultOutput && form.formState.isSubmitted && searchedQuery && (
          <GlassCard className="mt-6">
            <GlassCardHeader><GlassCardTitle>Search Results</GlassCardTitle></GlassCardHeader>
@@ -305,7 +302,7 @@ export default function CinebenchScoresPage() {
          </GlassCard>
       )}
 
-       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQuery) && ( 
+       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQuery) && (
          <GlassCard className="mt-6 opacity-70">
            <GlassCardHeader><GlassCardTitle>Search Results</GlassCardTitle></GlassCardHeader>
            <GlassCardContent className="py-10 text-center">
@@ -318,3 +315,4 @@ export default function CinebenchScoresPage() {
     </div>
   );
 }
+

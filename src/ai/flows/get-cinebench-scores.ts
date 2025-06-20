@@ -24,7 +24,6 @@ const CinebenchScoreEntrySchema = z.object({
   r23MultiCoreScore: z.number().int().describe('The Cinebench R23 multi-core score. MUST be a number. Can be 0 if not found.'),
   r24SingleCoreScore: z.number().int().optional().describe('The Cinebench 2024 (R24) single-core score. MUST be a number. Can be 0 or omitted if not found/applicable.'),
   r24MultiCoreScore: z.number().int().optional().describe('The Cinebench 2024 (R24) multi-core score. MUST be a number. Can be 0 or omitted if not found/applicable.'),
-  notes: z.string().optional().describe('Brief relevant notes, e.g., "Typical scores, may vary". If scores for a version are not found, provide a descriptive note here like "R24 scores not widely reported" or "CPU not found in benchmark lists". Do not just put "N/A" as the note content if an explanation is due.'),
 });
 
 const GetCinebenchScoresOutputSchema = z.object({
@@ -49,8 +48,7 @@ Specifically, for each CPU, provide:
 - r23MultiCoreScore (integer)
 - r24SingleCoreScore (integer, optional, can be 0 or omitted if not found)
 - r24MultiCoreScore (integer, optional, can be 0 or omitted if not found)
-All score fields MUST be NUMBERS (integers), not strings. They can be 0 if not found. 
-Use the 'notes' field for any explanations if scores are missing or to provide context. If scores are unavailable, provide a descriptive note like "R24 data not found" or "CPU not listed in benchmarks". Do not use "N/A" as the sole content of a note if an explanation is intended.
+All score fields MUST be NUMBERS (integers), not strings. They can be 0 if not found.
 
 {{#if cpuName}}
 For the CPU: {{{cpuName}}}
@@ -58,8 +56,7 @@ For the CPU: {{{cpuName}}}
 - Provide its Cinebench R23 multi-core score (r23MultiCoreScore).
 - Provide its Cinebench 2024 (R24) single-core score (r24SingleCoreScore), if available. If not, this can be 0 or omitted.
 - Provide its Cinebench 2024 (R24) multi-core score (r24MultiCoreScore), if available. If not, this can be 0 or omitted.
-- Add any brief, relevant 'notes'.
-If the exact CPU is not found, or scores are not available for it based on your primary reference, set scores to 0 and provide a descriptive explanation in the 'notes' field for that CPU's entry. If the CPU itself cannot be identified, return an empty 'scores' array and explain in 'dataSourceNotes'.
+If the exact CPU is not found, or scores are not available for it based on your primary reference, set scores to 0. If the CPU itself cannot be identified, return an empty 'scores' array and explain in 'dataSourceNotes'.
 Example for a specific CPU found:
 {
   "scores": [
@@ -68,8 +65,7 @@ Example for a specific CPU found:
       "r23SingleCoreScore": 2250,
       "r23MultiCoreScore": 38000,
       "r24SingleCoreScore": 130,
-      "r24MultiCoreScore": 2100,
-      "notes": "Typical R23 and R24 scores."
+      "r24MultiCoreScore": 2100
     }
   ],
   "dataSourceNotes": "Cinebench scores can vary. Data interpreted by AI based on sources like nanoreview.net."
@@ -80,11 +76,10 @@ Example for specific CPU NOT found or scores missing:
     {
       "cpuName": "{{{cpuName}}}",
       "r23SingleCoreScore": 0,
-      "r23MultiCoreScore": 0,
-      "notes": "Cinebench R23/R24 scores not found for this CPU based on available data from reference sources."
+      "r23MultiCoreScore": 0
     }
   ],
-  "dataSourceNotes": "Data interpreted by AI based on sources like nanoreview.net."
+  "dataSourceNotes": "Data interpreted by AI based on sources like nanoreview.net. Scores for specific CPU might be zero if not found."
 }
 {{else}}
 You are asked for a general list of top/recent CPUs.
@@ -94,7 +89,6 @@ Provide a list of approximately 5-7 recent and popular CPUs. For each CPU, inclu
 - r23MultiCoreScore
 - r24SingleCoreScore (if available, otherwise 0 or omit)
 - r24MultiCoreScore (if available, otherwise 0 or omit)
-- notes (provide context if scores for a version are missing, e.g., "R24 scores pending widespread reporting")
 Ensure all score fields are numbers (integers).
 Example for general list:
 {
@@ -104,24 +98,21 @@ Example for general list:
       "r23SingleCoreScore": 2050,
       "r23MultiCoreScore": 38500,
       "r24SingleCoreScore": 120,
-      "r24MultiCoreScore": 2050,
-      "notes": "High-end performance CPU."
+      "r24MultiCoreScore": 2050
     },
     {
       "cpuName": "Intel Core i9-14900K",
       "r23SingleCoreScore": 2300,
       "r23MultiCoreScore": 39000,
       "r24SingleCoreScore": 135,
-      "r24MultiCoreScore": 2200,
-      "notes": "Top-tier gaming and productivity CPU."
+      "r24MultiCoreScore": 2200
     },
     {
       "cpuName": "AMD Ryzen 5 7600X",
       "r23SingleCoreScore": 1950,
       "r23MultiCoreScore": 15000,
       "r24SingleCoreScore": 110,
-      "r24MultiCoreScore": 900,
-      "notes": "Excellent mid-range value."
+      "r24MultiCoreScore": 900
     }
   ],
   "dataSourceNotes": "Cinebench scores are indicative. This is a sample list, with data interpreted by AI based on sources like nanoreview.net. R24 scores are newer and may be less available."
@@ -155,7 +146,7 @@ const getCinebenchScoresFlow = ai.defineFlow(
               dataSourceNotes: note
           };
       }
-      
+
       const rawScoresArray = (output.scores && Array.isArray(output.scores)) ? output.scores : [];
       let validatedScores: CinebenchScoreEntry[];
 
@@ -164,56 +155,52 @@ const getCinebenchScoresFlow = ai.defineFlow(
           const r23Multi = Number(score.r23MultiCoreScore);
           const r24Single = score.r24SingleCoreScore !== undefined ? Number(score.r24SingleCoreScore) : undefined;
           const r24Multi = score.r24MultiCoreScore !== undefined ? Number(score.r24MultiCoreScore) : undefined;
-          
+
           return {
               cpuName: String(score.cpuName || 'Unknown CPU'),
               r23SingleCoreScore: isNaN(r23Single) ? 0 : r23Single,
               r23MultiCoreScore: isNaN(r23Multi) ? 0 : r23Multi,
               r24SingleCoreScore: r24Single === undefined || isNaN(r24Single) ? undefined : r24Single,
               r24MultiCoreScore: r24Multi === undefined || isNaN(r24Multi) ? undefined : r24Multi,
-              notes: score.notes !== undefined ? String(score.notes) : undefined,
           };
       }).filter(score => {
         if (input.cpuName && score.cpuName.toLowerCase().includes(input.cpuName.toLowerCase())) {
-            return true; // For specific search, keep if name matches, even if scores are 0 (notes will explain)
+            return true;
         }
-        if (!input.cpuName) { // For general list
-            return score.cpuName && score.cpuName !== 'Unknown CPU' && 
-                   (score.r23MultiCoreScore > 0 || score.r23SingleCoreScore > 0 || 
-                    (score.r24MultiCoreScore && score.r24MultiCoreScore > 0) || 
-                    (score.r24SingleCoreScore && score.r24SingleCoreScore > 0) || 
-                    (score.notes && score.notes.trim() !== "" && score.notes.trim().toLowerCase() !== "n/a"));
+        if (!input.cpuName) {
+            return score.cpuName && score.cpuName !== 'Unknown CPU' &&
+                   (score.r23MultiCoreScore > 0 || score.r23SingleCoreScore > 0 ||
+                    (score.r24MultiCoreScore && score.r24MultiCoreScore > 0) ||
+                    (score.r24SingleCoreScore && score.r24SingleCoreScore > 0) );
         }
-        return false; 
+        return false;
       });
-      
+
       let finalDataSourceNotes = output.dataSourceNotes;
 
-      if (input.cpuName) { 
+      if (input.cpuName) {
         if (validatedScores.length === 0 && !finalDataSourceNotes) {
           finalDataSourceNotes = `No specific Cinebench score data could be validated for "${input.cpuName}". The AI may not have found this CPU, or data was not in the expected format. Data is interpreted by AI based on sources like nanoreview.net.`;
         } else if (
           validatedScores.length === 1 &&
           validatedScores[0].cpuName.toLowerCase().includes(input.cpuName.toLowerCase()) &&
-          validatedScores[0].r23MultiCoreScore === 0 && 
+          validatedScores[0].r23MultiCoreScore === 0 &&
           validatedScores[0].r23SingleCoreScore === 0 &&
           (validatedScores[0].r24MultiCoreScore === undefined || validatedScores[0].r24MultiCoreScore === 0) &&
-          (validatedScores[0].r24SingleCoreScore === undefined || validatedScores[0].r24SingleCoreScore === 0) &&
-          (!validatedScores[0].notes || validatedScores[0].notes.trim() === "" || validatedScores[0].notes.trim().toLowerCase() === "n/a")
+          (validatedScores[0].r24SingleCoreScore === undefined || validatedScores[0].r24SingleCoreScore === 0)
         ) {
-           validatedScores[0].notes = `Cinebench R23/R24 scores not found or are zero for "${input.cpuName}". Please verify the CPU name or consult data source.`;
-           if (!finalDataSourceNotes) finalDataSourceNotes = "Data interpreted by AI based on sources like nanoreview.net.";
+           if (!finalDataSourceNotes) finalDataSourceNotes = `Cinebench R23/R24 scores not found or are zero for "${input.cpuName}". Please verify the CPU name or consult data source. Data interpreted by AI based on sources like nanoreview.net.`;
         } else if (validatedScores.length > 0 && !finalDataSourceNotes) {
            finalDataSourceNotes = "Cinebench scores can vary. Data interpreted by AI based on sources like nanoreview.net.";
         }
-      } else { // General list
+      } else {
         if (validatedScores.length === 0 && !finalDataSourceNotes) {
           finalDataSourceNotes = "AI could not generate a list of top CPU scores, or the data format was unusable. Data interpretation is based on sources like nanoreview.net.";
         } else if (validatedScores.length > 0 && !finalDataSourceNotes) {
           finalDataSourceNotes = "Cinebench scores are indicative. This is a sample list, with data interpreted by AI based on sources like nanoreview.net. R24 scores are newer and may be less available.";
         }
       }
-      
+
       return {
         scores: validatedScores,
         dataSourceNotes: finalDataSourceNotes || "Data interpreted by AI based on sources like nanoreview.net. Scores and availability may vary."
