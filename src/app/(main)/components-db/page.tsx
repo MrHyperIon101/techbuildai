@@ -16,8 +16,9 @@ import { handleGetComponentDetails } from '@/lib/actions';
 import type { ComponentDetails, RelatedProduct, ShoppingLink } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Cpu, ShoppingCart, ExternalLink, ListChecks, Zap, Info, Laptop, MonitorPlay } from 'lucide-react';
-import Link from 'next/link';
+import { Cpu, ShoppingCart, ExternalLink, ListChecks, Zap, Info, Laptop, MonitorPlay, ChevronsDown, ChevronsUp } from 'lucide-react';
+// import Link from 'next/link'; // Not used currently
+// import Image from 'next/image'; // Image display temporarily removed
 
 const componentSearchSchema = z.object({
   componentName: z.string().min(2, "Component name must be at least 2 characters.").max(100, "Component name is too long."),
@@ -25,12 +26,17 @@ const componentSearchSchema = z.object({
 
 type ComponentSearchValues = z.infer<typeof componentSearchSchema>;
 
+const INITIAL_ITEMS_TO_SHOW = 2;
+
 export default function ComponentDetailsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [details, setDetails] = useState<ComponentDetails | null>(null);
   const [searchedComponentName, setSearchedComponentName] = useState<string>("");
   const { toast } = useToast();
   const { addMessage } = useConversation();
+
+  const [showAllLaptops, setShowAllLaptops] = useState(false);
+  const [showAllPreBuiltPCs, setShowAllPreBuiltPCs] = useState(false);
 
   const form = useForm<ComponentSearchValues>({
     resolver: zodResolver(componentSearchSchema),
@@ -44,6 +50,8 @@ export default function ComponentDetailsPage() {
     setDetails(null);
     setSearchedComponentName(data.componentName);
     addMessage({ type: 'user', feature: 'components-db', content: `Search for component: ${data.componentName}` });
+    setShowAllLaptops(false); // Reset on new search
+    setShowAllPreBuiltPCs(false); // Reset on new search
     try {
       const result = await handleGetComponentDetails(data);
       setDetails(result);
@@ -64,6 +72,12 @@ export default function ComponentDetailsPage() {
       setIsLoading(false);
     }
   };
+
+  const relatedLaptops = details?.relatedProducts?.filter(p => p.type === 'Laptop') || [];
+  const relatedPreBuiltPCs = details?.relatedProducts?.filter(p => p.type === 'Pre-built PC') || [];
+
+  const displayedLaptops = showAllLaptops ? relatedLaptops : relatedLaptops.slice(0, INITIAL_ITEMS_TO_SHOW);
+  const displayedPreBuiltPCs = showAllPreBuiltPCs ? relatedPreBuiltPCs : relatedPreBuiltPCs.slice(0, INITIAL_ITEMS_TO_SHOW);
 
   return (
     <div className="space-y-8">
@@ -121,7 +135,6 @@ export default function ComponentDetailsPage() {
             </GlassCardHeader>
             <GlassCardContent>
               <div className="space-y-4">
-                 {/* Image display section removed as per user request */}
                 <div>
                   <h3 className="text-xl font-semibold text-accent mb-2 flex items-center">
                     <Zap size={20} className="mr-2"/> Overall Summary
@@ -207,37 +220,74 @@ export default function ComponentDetailsPage() {
               </GlassCardContent>
             </GlassCard>
           )}
-
-          {details.relatedProducts && details.relatedProducts.length > 0 && (
+          
+          {(relatedLaptops.length > 0 || relatedPreBuiltPCs.length > 0) ? (
             <GlassCard>
               <GlassCardHeader>
-                <GlassCardTitle>Related Products (Laptops & Pre-built PCs)</GlassCardTitle>
+                <GlassCardTitle>Related Products</GlassCardTitle>
               </GlassCardHeader>
-              <GlassCardContent className="space-y-6">
-                {details.relatedProducts.map((product, index) => (
-                  <RelatedProductCard key={`related-${index}`} product={product} />
-                ))}
-                {details.relatedProducts.length === 0 && (
-                   <div className="flex items-center text-muted-foreground">
-                        <Info size={20} className="mr-2" />
-                        <p>No specific laptops or pre-built PCs found featuring this component.</p>
+              <GlassCardContent className="space-y-8">
+                {relatedLaptops.length > 0 && (
+                  <div>
+                    <h3 className="text-2xl font-semibold text-primary mb-4 flex items-center">
+                      <Laptop size={28} className="mr-3" /> Laptops Featuring {details.componentNameFromAI || searchedComponentName}
+                    </h3>
+                    <div className="space-y-6">
+                      {displayedLaptops.map((product, index) => (
+                        <RelatedProductCard key={`laptop-${index}`} product={product} />
+                      ))}
                     </div>
+                    {relatedLaptops.length > INITIAL_ITEMS_TO_SHOW && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowAllLaptops(!showAllLaptops)}
+                        className="mt-6 w-full rounded-full border-accent text-accent hover:bg-accent/10"
+                      >
+                        {showAllLaptops ? <ChevronsUp className="mr-2" /> : <ChevronsDown className="mr-2" />}
+                        {showAllLaptops ? `Show Fewer Laptops` : `Show All ${relatedLaptops.length} Laptops`}
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {relatedPreBuiltPCs.length > 0 && (
+                  <div>
+                    <h3 className="text-2xl font-semibold text-primary mb-4 flex items-center">
+                      <MonitorPlay size={28} className="mr-3" /> Pre-built PCs Featuring {details.componentNameFromAI || searchedComponentName}
+                    </h3>
+                    <div className="space-y-6">
+                      {displayedPreBuiltPCs.map((product, index) => (
+                        <RelatedProductCard key={`pc-${index}`} product={product} />
+                      ))}
+                    </div>
+                    {relatedPreBuiltPCs.length > INITIAL_ITEMS_TO_SHOW && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowAllPreBuiltPCs(!showAllPreBuiltPCs)}
+                        className="mt-6 w-full rounded-full border-accent text-accent hover:bg-accent/10"
+                      >
+                        {showAllPreBuiltPCs ? <ChevronsUp className="mr-2" /> : <ChevronsDown className="mr-2" />}
+                        {showAllPreBuiltPCs ? `Show Fewer Pre-built PCs` : `Show All ${relatedPreBuiltPCs.length} Pre-built PCs`}
+                      </Button>
+                    )}
+                  </div>
                 )}
               </GlassCardContent>
             </GlassCard>
-          )}
-           {details.relatedProducts && details.relatedProducts.length === 0 && (!details.shoppingLinks || details.shoppingLinks.length ===0) && (
-             <GlassCard>
-                <GlassCardHeader>
-                    <GlassCardTitle>Shopping & Related Products</GlassCardTitle>
-                </GlassCardHeader>
-                <GlassCardContent>
-                     <div className="flex items-center text-muted-foreground">
-                        <Info size={20} className="mr-2" />
-                        <p>No shopping links or related products are available for this component.</p>
-                    </div>
-                </GlassCardContent>
-            </GlassCard>
+          ) : (
+             (!details.shoppingLinks || details.shoppingLinks.length === 0) && (
+                <GlassCard>
+                    <GlassCardHeader>
+                        <GlassCardTitle>Shopping & Related Products</GlassCardTitle>
+                    </GlassCardHeader>
+                    <GlassCardContent>
+                        <div className="flex items-center text-muted-foreground">
+                            <Info size={20} className="mr-2" />
+                            <p>No shopping links or related products are available for this component at the moment.</p>
+                        </div>
+                    </GlassCardContent>
+                </GlassCard>
+             )
            )}
         </div>
       )}
@@ -281,11 +331,13 @@ function RelatedProductCard({ product }: { product: RelatedProduct }) {
       {product.keySpecs && product.keySpecs.length > 0 && (
         <div className="mb-3">
           <h5 className="text-sm font-medium text-muted-foreground mb-1">Key Specs:</h5>
-          <ul className="list-disc list-inside space-y-0.5 text-xs text-foreground/80 pl-1">
-            {product.keySpecs.map((spec, idx) => (
-              <li key={idx}>{spec}</li>
-            ))}
-          </ul>
+          <ScrollArea className="max-h-[80px] pr-2">
+            <ul className="list-disc list-inside space-y-0.5 text-xs text-foreground/80 pl-1">
+              {product.keySpecs.map((spec, idx) => (
+                <li key={idx}>{spec}</li>
+              ))}
+            </ul>
+          </ScrollArea>
         </div>
       )}
 
@@ -300,8 +352,9 @@ function RelatedProductCard({ product }: { product: RelatedProduct }) {
         </div>
       )}
       {(!product.shoppingLinks || product.shoppingLinks.length === 0) && (
-         <p className="text-xs text-muted-foreground italic">No direct shopping links available for this product.</p>
+         <p className="text-xs text-muted-foreground italic">No direct shopping links available for this product at the moment.</p>
       )}
     </div>
   );
 }
+

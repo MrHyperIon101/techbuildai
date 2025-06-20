@@ -32,7 +32,7 @@ const ComponentTechnicalCategorySchema = z.object({
 
 const ShoppingLinkSchema = z.object({
   store: z.string().describe("Store name, e.g., 'Amazon.in', 'Flipkart.com'"),
-  url: z.string().describe("Direct product URL from the specified store"),
+  url: z.string().describe("Direct product URL from the specified store"), // Made URL a general string
   price: z.string().optional().describe("Current price in INR, e.g., '₹65,000' (optional)"),
 });
 
@@ -50,7 +50,8 @@ const GetComponentDetailsOutputSchema = z.object({
   keyFeatures: z.array(z.string()).optional().describe("A list of 3-5 key features of the component."),
   technicalCategories: z.array(ComponentTechnicalCategorySchema).optional().describe("Detailed technical specifications, grouped by category (e.g., 'Core Specs', 'Memory', 'Connectivity')."),
   shoppingLinks: z.array(ShoppingLinkSchema).optional().describe("Shopping links for the component itself from Indian e-commerce sites like amazon.in or flipkart.com. Include price in INR if available."),
-  relatedProducts: z.array(RelatedProductSchema).optional().describe("A list of up to 2 laptops and up to 2 pre-built PCs featuring the searched component. Prioritize products available on Indian e-commerce sites."),
+  relatedProducts: z.array(RelatedProductSchema).optional().describe("A list of up to 5 laptops and up to 5 pre-built PCs featuring the searched component. Prioritize products available on Indian e-commerce sites."),
+  imageUrl: z.string().optional().describe("A URL to an image of the component. (Optional)"),
 });
 
 export type GetComponentDetailsOutput = z.infer<typeof GetComponentDetailsOutputSchema>;
@@ -63,25 +64,30 @@ const getComponentDetailsPrompt = ai.definePrompt({
   name: 'getComponentDetailsPrompt',
   input: {schema: GetComponentDetailsInputSchema},
   output: {schema: GetComponentDetailsOutputSchema},
-  prompt: `You are a PC hardware expert. For the component "{{{componentName}}}", provide a detailed breakdown in JSON format.
+  prompt: `You are a PC hardware expert and market analyst specializing in the Indian market. For the component "{{{componentName}}}", provide a detailed breakdown in JSON format.
 The JSON object must conform to the output schema provided.
 
 Key details for the component itself:
 - componentNameFromAI: The full, official name of the component.
-- overallSummary: A concise summary (2-3 sentences). If a summary cannot begenerated, this field can be omitted.
+- overallSummary: A concise summary (2-3 sentences). If a summary cannot be generated, this field can be omitted.
 - keyFeatures: A list of 3-5 prominent features.
 - technicalCategories: Group specifications into relevant categories like "Core Specifications", "Memory", "Connectivity", "Power Requirements", "Physical Dimensions". Each category should have a list of spec-value pairs.
-- shoppingLinks: Provide 1-2 direct product links for the component itself from amazon.in or flipkart.com. Include the current price in INR (e.g., "₹XX,XXX") if readily available.
+- shoppingLinks: Provide 1-2 *direct and currently working* product links for the component itself from amazon.in or flipkart.com. Include the current price in INR (e.g., "₹XX,XXX") if readily available on the linked page. If a working link to these specific stores cannot be found, or if a product is no longer listed, omit the link.
+- imageUrl: An optional URL to a clear image of the component.
 
 In addition to the component details, find and include information about related products:
 - relatedProducts:
-  - Laptops: Find up to 2-3 laptops that prominently feature this component. For each laptop, provide its name, type ('Laptop'), a list of 2-3 key specifications (like CPU, RAM, Screen Size), its approximate price in INR, and shopping links from amazon.in or flipkart.com.
-  - Pre-built PCs: Find up to 2-3 pre-built PCs that prominently feature this component. For each PC, provide its name, type ('Pre-built PC'), a list of 2-3 key specifications (like CPU, RAM, an additional key component like storage or motherboard series), its approximate price in INR, and shopping links from amazon.in or flipkart.com.
+  - Laptops: Find up to 5 distinct, *currently available* laptops that prominently feature this component. Focus on popular and reputable gaming/high-performance brands (e.g., Asus ROG Strix, HP Omen, Acer Predator, Lenovo Legion, MSI Gaming series, Dell Alienware, Apple MacBook Pro if applicable for the component type). For each laptop, provide its full name, type ('Laptop'), a list of 2-3 key specifications (like CPU, RAM, Screen Size/Refresh Rate), its approximate current price in INR, and *direct and working* shopping links from amazon.in or flipkart.com.
+  - Pre-built PCs: Find up to 5 distinct, *currently available* pre-built PCs that prominently feature this component. Focus on well-known system integrators or major brands available in India. For each PC, provide its full name, type ('Pre-built PC'), a list of 2-3 key specifications (like CPU, RAM, an additional key component like storage type/size or motherboard series), its approximate current price in INR, and *direct and working* shopping links from amazon.in or flipkart.com.
+
+  - For both laptops and PCs:
+    - Prioritize products available on Indian e-commerce sites (amazon.in, flipkart.com).
+    - *Crucially, ensure all provided shopping links are current, working, and lead directly to the product page on amazon.in or flipkart.com.* If a working link to these specific stores cannot be found, or if a product is no longer listed or the link is broken, it is better to omit the shoppingLink for that product or even the product itself if no reliable purchasing information can be found.
+    - If possible, try to list these related products (both laptops and PCs separately) starting with more budget-friendly options first, based on their approximate current price in INR.
 
 Ensure all technical details are accurate and derived from official or reputable sources.
-Prioritize products available on Indian e-commerce sites (amazon.in, flipkart.com) and provide direct links.
-If a specific optional field's information (like overallSummary for the component, or price/shoppingLinks for related products) is not found or not applicable, omit it from the JSON or set array fields to empty arrays.
-Focus on providing structured data as per the schema.
+If a specific optional field's information (like overallSummary for the component, price/shoppingLinks for related products, or imageUrl) is not found or not applicable, omit it from the JSON or set array fields to empty arrays.
+Focus on providing structured, accurate, and actionable data as per the schema, with a strong emphasis on the quality and relevance of shopping links for the Indian market.
 `,
 });
 
@@ -100,3 +106,4 @@ const getComponentDetailsFlow = ai.defineFlow(
     return output;
   }
 );
+
