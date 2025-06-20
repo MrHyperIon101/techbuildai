@@ -16,8 +16,7 @@ import { handleGetComponentDetails } from '@/lib/actions';
 import type { ComponentDetails, ComponentTechnicalCategory, ShoppingLink } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Cpu, ShoppingCart, ExternalLink, ImageOff, ListChecks, Zap, Info } from 'lucide-react';
-import Image from 'next/image';
+import { Cpu, ShoppingCart, ExternalLink, ListChecks, Zap, Info } from 'lucide-react';
 
 const componentSearchSchema = z.object({
   componentName: z.string().min(2, "Component name must be at least 2 characters.").max(100, "Component name is too long."),
@@ -119,15 +118,8 @@ export default function ComponentDetailsPage() {
             <GlassCardHeader>
               <GlassCardTitle className="text-3xl">{details.componentNameFromAI || searchedComponentName}</GlassCardTitle>
             </GlassCardHeader>
-            <GlassCardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-1">
-                {/* Image display is temporarily removed */}
-                <div className="aspect-square rounded-lg bg-muted/30 flex flex-col items-center justify-center text-muted-foreground">
-                  <ImageOff size={48} />
-                  <p className="mt-2 text-sm">Image display temporarily disabled</p>
-                </div>
-              </div>
-              <div className="md:col-span-2 space-y-4">
+            <GlassCardContent>
+              <div className="space-y-4">
                 <div>
                   <h3 className="text-xl font-semibold text-accent mb-2 flex items-center">
                     <Zap size={20} className="mr-2"/> Overall Summary
