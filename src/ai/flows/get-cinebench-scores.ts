@@ -124,32 +124,30 @@ const getCinebenchScoresFlow = ai.defineFlow(
       const rawScoresArray = (output.scores && Array.isArray(output.scores)) ? output.scores : [];
       let validatedScores: CinebenchScoreEntry[];
 
-      // More robust validation and type conversion
       validatedScores = rawScoresArray.map(score => {
           const singleCore = Number(score.singleCoreScore);
           const multiCore = Number(score.multiCoreScore);
           return {
               cpuName: String(score.cpuName || 'Unknown CPU'),
               cinebenchVersion: String(score.cinebenchVersion || 'N/A'),
-              singleCoreScore: isNaN(singleCore) ? 0 : Math.max(0, singleCore), // Ensure positive or 0
-              multiCoreScore: isNaN(multiCore) ? 0 : Math.max(0, multiCore),   // Ensure positive or 0
+              singleCoreScore: isNaN(singleCore) ? 0 : Math.max(0, singleCore),
+              multiCoreScore: isNaN(multiCore) ? 0 : Math.max(0, multiCore),
               notes: score.notes ? String(score.notes) : undefined,
           };
-      }).filter(score => score.cpuName && score.cpuName !== 'Unknown CPU' && (input.cpuName || score.multiCoreScore > 0) ); // For general list, ensure some score data exists
+      }).filter(score => score.cpuName && score.cpuName !== 'Unknown CPU' && (input.cpuName || score.multiCoreScore > 0) ); 
       
       let finalDataSourceNotes = output.dataSourceNotes;
 
-      if (input.cpuName) { // Specific CPU search
+      if (input.cpuName) { 
         if (validatedScores.length === 0 && !finalDataSourceNotes) {
           finalDataSourceNotes = `No specific Cinebench score data could be validated for "${input.cpuName}". The AI may not have found this CPU, or data was not in the expected format. Data is interpreted by AI based on sources like nanoreview.net.`;
         } else if (validatedScores.length > 0 && validatedScores[0].multiCoreScore === 0 && validatedScores[0].singleCoreScore === 0 && !validatedScores[0].notes) {
-           // If scores are 0 and no notes, it's likely AI didn't find it
            validatedScores[0].notes = `No specific Cinebench R23 scores found for "${input.cpuName}" by the AI. Please verify the CPU name.`;
            if (!finalDataSourceNotes) finalDataSourceNotes = "Data interpreted by AI based on sources like nanoreview.net.";
         } else if (validatedScores.length > 0 && !finalDataSourceNotes) {
            finalDataSourceNotes = "Cinebench scores can vary. Data interpreted by AI based on sources like nanoreview.net.";
         }
-      } else { // General list case
+      } else { 
         if (validatedScores.length === 0 && !finalDataSourceNotes) {
           finalDataSourceNotes = "AI could not generate a list of top CPU scores, or the data format was unusable. Data interpretation is based on sources like nanoreview.net.";
         } else if (validatedScores.length > 0 && !finalDataSourceNotes) {
