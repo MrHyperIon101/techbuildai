@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { CinebenchScoresOutput } from '@/lib/types';
+import type { CinebenchScoresOutput, CinebenchScoreEntry } from '@/lib/types';
 
 
 const GetCinebenchScoresInputSchema = z.object({
@@ -42,7 +42,7 @@ const prompt = ai.definePrompt({
   output: {schema: GetCinebenchScoresOutputSchema},
   prompt: `You are a PC hardware data specialist. Your task is to provide Cinebench scores.
 Focus on Cinebench R23 scores as a primary reference. If R23 is unavailable for a specific CPU, you may provide scores from another recent Cinebench version (e.g., Cinebench 2024) and clearly state the version.
-The singleCoreScore and multiCoreScore fields MUST be NUMBERS (integers), not strings when scores are provided.
+The singleCoreScore and multiCoreScore fields MUST be NUMBERS (integers), not strings, when scores are provided.
 
 {{#if cpuName}}
 For the CPU: {{{cpuName}}}
@@ -50,7 +50,7 @@ For the CPU: {{{cpuName}}}
 - Provide its Cinebench R23 multi-core score (as a number).
 - Specify the Cinebench version if not R23.
 - Add any brief, relevant notes (e.g., common score range, or if data is from a specific prominent review site).
-If the exact CPU is not found, state that clearly in the notes for that entry and do not attempt to guess. Return an empty 'scores' array and explain in 'dataSourceNotes' if no data is found.
+If the exact CPU is not found, state that clearly in the notes for that entry and do not attempt to guess. Return an empty 'scores' array and explain in 'dataSourceNotes' if no data is found for "{{{cpuName}}}".
 The output should be a JSON object with a 'scores' array containing a single entry for this CPU (or an empty array if not found), and a 'dataSourceNotes' string.
 Example for a specific CPU:
 {
@@ -67,7 +67,7 @@ Example for a specific CPU:
 }
 {{else}}
 You are asked for a general list of top/recent CPUs.
-Provide a list of approximately 5-7 recent and popular CPUs along with their Cinebench R23 single-core and multi-core scores.
+Provide a list of approximately 5-7 recent and popular CPUs along with their Cinebench R23 single-core and multi-core scores. Ensure all score fields are positive integers.
 The output should be a JSON object with a 'scores' array, where each entry conforms to the CinebenchScoreEntrySchema.
 Example for general list:
 {
@@ -110,7 +110,6 @@ Example for general list:
   ],
   "dataSourceNotes": "Cinebench scores are indicative and can vary based on system configuration, cooling, and test conditions. Data compiled from publicly available information and tech reviews. This is a sample list of recent/popular CPUs."
 }
-Ensure the 'scores' array contains these entries and all score fields are positive integers.
 IMPORTANT: If you cannot reliably generate this list of CPUs and their scores as requested, you MUST still return a valid JSON object according to the schema, with an empty 'scores' array and provide an explanation or alternative guidance in the 'dataSourceNotes' field. Do not return an error or malformed JSON.
 {{/if}}
 
@@ -134,7 +133,7 @@ const getCinebenchScoresFlow = ai.defineFlow(
       if (!output) {
           console.warn("AI output for Cinebench scores was null or undefined. Input:", input, "Usage:", usage);
           const note = input.cpuName 
-            ? `AI was unable to retrieve Cinebench scores for ${input.cpuName}. Please ensure the name is correct or try a general search.`
+            ? `AI was unable to retrieve Cinebench scores for "${input.cpuName}". Please ensure the name is correct or try a general search.`
             : "AI was unable to generate a list of top CPU scores at this time. Please try again later or search for a specific CPU.";
           return {
               scores: [],
@@ -142,43 +141,51 @@ const getCinebenchScoresFlow = ai.defineFlow(
           };
       }
       
-      const scoresArray = (output.scores && Array.isArray(output.scores)) ? output.scores : [];
+      const rawScoresArray = (output.scores && Array.isArray(output.scores)) ? output.scores : [];
 
-      const validatedScores = scoresArray.map(score => ({
-        cpuName: String(score.cpuName || 'Unknown CPU'),
-        cinebenchVersion: String(score.cinebenchVersion || 'N/A'),
-        singleCoreScore: Number(score.singleCoreScore) || 0,
-        multiCoreScore: Number(score.multiCoreScore) || 0,
-        notes: score.notes ? String(score.notes) : undefined,
-      })).filter(score => score.cpuName && score.cpuName !== 'Unknown CPU' && score.multiCoreScore > 0 );
+      const validatedScores: CinebenchScoreEntry[] = rawScoresArray
+        .map(score => {
+          const singleCore = Number(score.singleCoreScore);
+          const multiCore = Number(score.multiCoreScore);
+          return {
+            cpuName: String(score.cpuName || 'Unknown CPU'),
+            cinebenchVersion: String(score.cinebenchVersion || 'N/A'),
+            singleCoreScore: isNaN(singleCore) ? 0 : singleCore,
+            multiCoreScore: isNaN(multiCore) ? 0 : multiCore,
+            notes: score.notes ? String(score.notes) : undefined,
+          };
+        })
+        .filter(score => score.cpuName && score.cpuName !== 'Unknown CPU' && score.multiCoreScore > 0);
 
-      let notes = output.dataSourceNotes;
-      if (!input.cpuName) { 
+
+      let finalDataSourceNotes = output.dataSourceNotes;
+
+      if (!input.cpuName) { // General list case
         if (validatedScores.length > 0) {
-          notes = output.dataSourceNotes || "Cinebench scores are indicative and can vary based on system configuration, cooling, and test conditions. Data compiled from publicly available information. This is a sample list of recent/popular CPUs.";
+          finalDataSourceNotes = output.dataSourceNotes || "Cinebench scores are indicative and can vary based on system configuration, cooling, and test conditions. Data compiled from publicly available information. This is a sample list of recent/popular CPUs.";
         } else {
-          notes = output.dataSourceNotes || "AI attempted to generate a list of top CPU scores but could not find sufficient data at this time. Please try searching for a specific CPU or check reputable review sites for general comparisons.";
+          finalDataSourceNotes = output.dataSourceNotes || "AI attempted to generate a list of top CPU scores but could not find sufficient data at this time. Please try searching for a specific CPU or check reputable review sites for general comparisons.";
         }
-      } else { 
+      } else { // Specific CPU search case
         if (validatedScores.length > 0) {
-           notes = output.dataSourceNotes || "Cinebench scores can vary based on test conditions, system configuration (RAM, cooling), and software. Data compiled from publicly available information and tech reviews.";
+           finalDataSourceNotes = output.dataSourceNotes || "Cinebench scores can vary based on test conditions, system configuration (RAM, cooling), and software. Data compiled from publicly available information and tech reviews.";
         } else {
-            notes = output.dataSourceNotes || `No specific Cinebench score data found for "${input.cpuName}". Ensure the name is correct or the CPU might be too old/new for common listings.`;
+            finalDataSourceNotes = output.dataSourceNotes || `No specific Cinebench score data found for "${input.cpuName}". Ensure the name is correct, the CPU might be too old/new for common listings, or the AI could not retrieve the data.`;
         }
       }
       
       return {
         scores: validatedScores,
-        dataSourceNotes: notes
+        dataSourceNotes: finalDataSourceNotes
       };
 
     } catch (error) {
       console.error("Error during getCinebenchScoresFlow execution:", error, "Input was:", input);
       let defaultNote = "An error occurred while fetching Cinebench scores from the AI. Please try again later.";
-      if (!input.cpuName) {
-        defaultNote = "An error occurred while trying to generate a list of top CPU scores from the AI. Please try again later or search for a specific CPU."
-      } else {
+      if (input.cpuName) {
         defaultNote += ` If searching for '${input.cpuName}', ensure the name is correct.`
+      } else {
+         defaultNote = "An error occurred while trying to generate a list of top CPU scores from the AI. Please try again later or search for a specific CPU."
       }
       return {
           scores: [],
