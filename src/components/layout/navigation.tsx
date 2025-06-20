@@ -39,8 +39,8 @@ const moreNavItems = [
 
 // Base classes for consistent styling of all nav items (links and the "More" trigger button)
 const navItemBaseClasses = cn(
-  'flex flex-col items-center justify-center p-1.5 rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20 shrink-0', // Mobile padding p-1.5
-  'w-[58px] h-[58px]', // Mobile size: 58px x 58px
+  'flex flex-col items-center justify-center rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20 shrink-0',
+  'p-1 w-14 h-14', // Mobile: 56px x 56px, padding 4px
   'md:w-auto md:h-12 md:flex-row md:px-3 md:py-1.5' // Desktop layout adjustments (h-12 = 48px height)
 );
 
