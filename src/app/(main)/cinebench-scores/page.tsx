@@ -16,7 +16,7 @@ import { handleGetCinebenchScores } from '@/lib/actions';
 import type { CinebenchScoreEntry, CinebenchScoresOutput } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart3, Cpu, Info, ArrowUpDown } from 'lucide-react';
+import { BarChart3, Cpu, Info, ArrowUpDown, ExternalLink } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const searchSchema = z.object({
@@ -30,7 +30,7 @@ type SortOrder = 'asc' | 'desc';
 export default function CinebenchScoresPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [scoresOutput, setScoresOutput] = useState<CinebenchScoresOutput | null>(null);
-  const [searchedQuery, setSearchedQuery] = useState<string | null>(null);
+  const [searchedQuery, setSearchedQuery] = useState<string | null>(null); // Stores the actual CPU name searched or "general list"
   const { toast } = useToast();
   const { addMessage } = useConversation();
 
@@ -45,14 +45,15 @@ export default function CinebenchScoresPage() {
   const fetchScores = async (data?: SearchFormValues) => {
     setIsLoading(true);
     setScoresOutput(null);
-    const query = data?.cpuName || "general list";
-    setSearchedQuery(query);
-    addMessage({ type: 'user', feature: 'cinebench-scores', content: `Search Cinebench scores for: ${query}` });
+    const queryInput = data?.cpuName?.trim() || "";
+    const displayQuery = queryInput || "general list";
+    setSearchedQuery(displayQuery);
+    addMessage({ type: 'user', feature: 'cinebench-scores', content: `Search Cinebench scores for: ${displayQuery}` });
 
     try {
-      const result = await handleGetCinebenchScores({ cpuName: data?.cpuName });
+      const result = await handleGetCinebenchScores({ cpuName: queryInput || undefined }); // Pass undefined if queryInput is empty
       setScoresOutput(result);
-      addMessage({ type: 'ai', feature: 'cinebench-scores', content: `Cinebench scores for ${query}:`, data: result });
+      addMessage({ type: 'ai', feature: 'cinebench-scores', content: `Cinebench scores for ${displayQuery}:`, data: result });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       toast({
@@ -61,17 +62,16 @@ export default function CinebenchScoresPage() {
         variant: "destructive",
       });
       addMessage({ type: 'system', feature: 'cinebench-scores', content: `Error: ${errorMessage}` });
-      setScoresOutput({ scores: [], dataSourceNotes: errorMessage }); // Show error in notes
+      setScoresOutput({ scores: [], dataSourceNotes: errorMessage }); 
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Fetch general list on initial load
-    fetchScores();
+    fetchScores(); // Fetch general guidance on initial load
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []); 
 
   const onSubmit: SubmitHandler<SearchFormValues> = (data) => {
     fetchScores(data);
@@ -102,7 +102,7 @@ export default function CinebenchScoresPage() {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortKey(key);
-      setSortOrder('desc'); // Default to desc for new numeric columns like scores
+      setSortOrder('desc'); 
     }
   };
   
@@ -112,6 +112,8 @@ export default function CinebenchScoresPage() {
       <ArrowUpDown className="ml-2 h-3 w-3 transform rotate-180 text-accent" /> : 
       <ArrowUpDown className="ml-2 h-3 w-3 text-accent" />;
   };
+
+  const isGeneralSearch = searchedQuery === "general list";
 
   return (
     <div className="space-y-8">
@@ -130,7 +132,7 @@ export default function CinebenchScoresPage() {
                   <FormItem className="flex-grow">
                     <FormLabel>CPU Model (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Intel Core i9-13900K (leave blank for general list)" {...field} className="bg-background/50 rounded-full px-4" />
+                      <Input placeholder="e.g., Intel Core i9-13900K (leave blank for general guidance)" {...field} className="bg-background/50 rounded-full px-4" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -148,7 +150,7 @@ export default function CinebenchScoresPage() {
         <div className="flex flex-col items-center justify-center py-16">
           <LoadingSpinner size={64} />
           <p className="mt-6 text-muted-foreground text-lg">
-            {searchedQuery === "general list" ? "Fetching general list of Cinebench scores..." : `Fetching Cinebench scores for ${searchedQuery}...`}
+            {isGeneralSearch ? "Fetching guidance for general CPU lists..." : `Fetching Cinebench scores for ${searchedQuery}...`}
           </p>
         </div>
       )}
@@ -157,11 +159,11 @@ export default function CinebenchScoresPage() {
         <GlassCard className="mt-6">
           <GlassCardHeader>
             <GlassCardTitle>
-              Benchmark Results {searchedQuery && searchedQuery !== "general list" ? `for ${searchedQuery}` : "(Popular CPUs)"}
+              {isGeneralSearch ? "General CPU Performance Resources" : `Benchmark Results for ${searchedQuery}`}
             </GlassCardTitle>
           </GlassCardHeader>
           <GlassCardContent>
-            {scoresOutput.scores && scoresOutput.scores.length > 0 ? (
+            {sortedScores.length > 0 && !isGeneralSearch ? (
               <ScrollArea className="max-h-[60vh]">
                 <Table>
                   <TableHeader>
@@ -185,8 +187,8 @@ export default function CinebenchScoresPage() {
                     {sortedScores.map((score, index) => (
                       <TableRow key={index} className="hover:bg-muted/20">
                         <TableCell className="font-medium text-primary">{score.cpuName}</TableCell>
-                        <TableCell className="text-accent">{score.singleCoreScore.toLocaleString()}</TableCell>
-                        <TableCell className="text-accent font-semibold">{score.multiCoreScore.toLocaleString()}</TableCell>
+                        <TableCell className="text-accent">{score.singleCoreScore > 0 ? score.singleCoreScore.toLocaleString() : 'N/A'}</TableCell>
+                        <TableCell className="text-accent font-semibold">{score.multiCoreScore > 0 ? score.multiCoreScore.toLocaleString() : 'N/A'}</TableCell>
                         <TableCell>{score.cinebenchVersion}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{score.notes || 'N/A'}</TableCell>
                       </TableRow>
@@ -195,15 +197,27 @@ export default function CinebenchScoresPage() {
                 </Table>
               </ScrollArea>
             ) : (
-              <div className="py-10 text-center">
-                <Cpu size={48} className="text-primary mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  No Cinebench scores found for "{searchedQuery || 'your query'}".
-                </p>
-                 {scoresOutput.dataSourceNotes && <p className="text-sm text-muted-foreground/70 mt-1">{scoresOutput.dataSourceNotes}</p>}
+              <div className="py-6 text-center">
+                {isGeneralSearch ? (
+                  <ExternalLink size={48} className="text-primary mx-auto mb-4" />
+                ) : (
+                  <Cpu size={48} className="text-primary mx-auto mb-4" />
+                )}
+                
+                {isGeneralSearch && scoresOutput.dataSourceNotes ? (
+                   <p className="text-muted-foreground prose prose-sm prose-invert max-w-none">{scoresOutput.dataSourceNotes}</p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    No specific Cinebench scores found for "{searchedQuery || 'your query'}".
+                  </p>
+                )}
+
+                {(!isGeneralSearch && scoresOutput.dataSourceNotes) && (
+                  <p className="text-sm text-muted-foreground/70 mt-2">{scoresOutput.dataSourceNotes}</p>
+                )}
               </div>
             )}
-            {scoresOutput.dataSourceNotes && scoresOutput.scores && scoresOutput.scores.length > 0 && (
+            {(sortedScores.length > 0 && !isGeneralSearch && scoresOutput.dataSourceNotes) && (
               <p className="text-xs text-muted-foreground italic mt-4 p-2 bg-muted/20 rounded-md">
                 <Info size={14} className="inline mr-1.5 mb-0.5" />
                 {scoresOutput.dataSourceNotes}
@@ -212,12 +226,12 @@ export default function CinebenchScoresPage() {
           </GlassCardContent>
         </GlassCard>
       )}
-       {!isLoading && !scoresOutput && !form.formState.isSubmitted && ( // Initial empty state before any search
+       {!isLoading && !scoresOutput && !form.formState.isSubmitted && ( 
          <GlassCard className="mt-6">
            <GlassCardContent className="py-10 text-center">
             <BarChart3 size={56} className="text-primary mx-auto mb-4" />
-            <p className="text-xl text-muted-foreground">Enter a CPU name or leave blank for a general list.</p>
-            <p className="text-sm text-muted-foreground/70 mt-1">CPU benchmark scores will be displayed here.</p>
+            <p className="text-xl text-muted-foreground">Enter a CPU name or leave blank for general guidance.</p>
+            <p className="text-sm text-muted-foreground/70 mt-1">CPU benchmark scores or resources will be displayed here.</p>
           </GlassCardContent>
          </GlassCard>
       )}
