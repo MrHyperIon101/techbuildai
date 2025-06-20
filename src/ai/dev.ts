@@ -8,3 +8,6 @@ import '@/ai/flows/generate-pc-build-suggestions.ts';
 import '@/ai/flows/check-compatibility.ts';
 import '@/ai/flows/get-cinebench-scores.ts';
 import '@/ai/flows/get-3dmark-scores.ts';
+import '@/ai/flows/get-furmark-scores.ts';
+import '@/ai/flows/get-pcmark-scores.ts';
+import '@/ai/flows/get-geekbench-scores.ts';

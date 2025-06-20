@@ -7,9 +7,22 @@ import { calculateBottleneck, CalculateBottleneckInput } from '@/ai/flows/calcul
 import { checkCompatibility, CheckCompatibilityInput } from '@/ai/flows/check-compatibility';
 import { getCinebenchScores, GetCinebenchScoresInput } from '@/ai/flows/get-cinebench-scores';
 import { get3dMarkScores, Get3dMarkScoresInput } from '@/ai/flows/get-3dmark-scores';
+import { getFurMarkScores, GetFurMarkScoresInput } from '@/ai/flows/get-furmark-scores';
+import { getPCMarkScores, GetPCMarkScoresInput } from '@/ai/flows/get-pcmark-scores';
+import { getGeekbenchScores, GetGeekbenchScoresInput } from '@/ai/flows/get-geekbench-scores';
 
 
-import type { BuildSuggestion, BottleneckInfo, ComponentDetails, CompatibilityReport, CinebenchScoresOutput, Gpu3dMarkScoresOutput } from './types';
+import type { 
+    BuildSuggestion, 
+    BottleneckInfo, 
+    ComponentDetails, 
+    CompatibilityReport, 
+    CinebenchScoresOutput, 
+    Gpu3dMarkScoresOutput,
+    FurMarkScoresOutput,
+    PCMarkScoresOutput,
+    GeekbenchScoresOutput
+} from './types';
 
 export async function handleSuggestPcBuild(input: SuggestPcBuildInput): Promise<BuildSuggestion> {
   try {
@@ -92,7 +105,6 @@ export async function handleCheckCompatibility(input: CheckCompatibilityInput): 
 export async function handleGetCinebenchScores(input: GetCinebenchScoresInput): Promise<CinebenchScoresOutput> {
   try {
     const result = await getCinebenchScores(input);
-     // Ensure scores is always an array, even if AI messes up
     if (result && !Array.isArray(result.scores)) {
       result.scores = [];
     }
@@ -119,5 +131,53 @@ export async function handleGet3dMarkScores(input: Get3dMarkScoresInput): Promis
         throw error;
     }
     throw new Error("Failed to retrieve 3DMark scores. Please try again.");
+  }
+}
+
+export async function handleGetFurMarkScores(input: GetFurMarkScoresInput): Promise<FurMarkScoresOutput> {
+  try {
+    const result = await getFurMarkScores(input);
+    if (result && !Array.isArray(result.scores)) {
+      result.scores = [];
+    }
+    return result as FurMarkScoresOutput;
+  } catch (error) {
+    console.error("Error in handleGetFurMarkScores:", error);
+    if (error instanceof Error && error.message.includes("AI response did not match")) {
+        throw error;
+    }
+    throw new Error("Failed to retrieve FurMark scores. Please try again.");
+  }
+}
+
+export async function handleGetPCMarkScores(input: GetPCMarkScoresInput): Promise<PCMarkScoresOutput> {
+  try {
+    const result = await getPCMarkScores(input);
+    if (result && !Array.isArray(result.scores)) {
+      result.scores = [];
+    }
+    return result as PCMarkScoresOutput;
+  } catch (error) {
+    console.error("Error in handleGetPCMarkScores:", error);
+    if (error instanceof Error && error.message.includes("AI response did not match")) {
+        throw error;
+    }
+    throw new Error("Failed to retrieve PCMark scores. Please try again.");
+  }
+}
+
+export async function handleGetGeekbenchScores(input: GetGeekbenchScoresInput): Promise<GeekbenchScoresOutput> {
+  try {
+    const result = await getGeekbenchScores(input);
+    if (result && !Array.isArray(result.scores)) {
+      result.scores = [];
+    }
+    return result as GeekbenchScoresOutput;
+  } catch (error) {
+    console.error("Error in handleGetGeekbenchScores:", error);
+    if (error instanceof Error && error.message.includes("AI response did not match")) {
+        throw error;
+    }
+    throw new Error("Failed to retrieve Geekbench scores. Please try again.");
   }
 }

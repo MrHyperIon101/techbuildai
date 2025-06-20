@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import Link from 'next/link';
-import { ArrowRight, Bot, Cpu, Wrench, ShieldCheck, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon } from 'lucide-react';
+import { ArrowRight, Bot, Cpu, Wrench, ShieldCheck, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function HomePage() {
@@ -22,16 +22,16 @@ export default function HomePage() {
         </p>
       </header>
 
-      <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 max-w-7xl w-full animate-slide-in-up ">
+      <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 max-w-7xl w-full animate-slide-in-up ">
         <FeatureCard
           title="AI PC Builder"
-          description="Get personalized PC component recommendations based on your budget and needs. Powered by cutting-edge AI."
+          description="Get personalized PC component recommendations based on your budget and needs."
           icon={<Bot className="w-8 h-8 text-accent" />}
           href="/builder"
         />
         <FeatureCard
           title="Component Insights"
-          description="Deep dive into any PC component. Get AI-powered details, specs, and performance analysis."
+          description="Deep dive into any PC component. Get AI-powered details, specs, and analysis."
           icon={<Cpu className="w-8 h-8 text-accent" />}
           href="/components-db"
         />
@@ -49,7 +49,7 @@ export default function HomePage() {
         />
         <FeatureCard
           title="Cinebench Scores"
-          description="Compare CPU performance with a database of Cinebench benchmark scores."
+          description="Compare CPU performance with Cinebench R23 & R24 benchmark scores."
           icon={<BarChart3 className="w-8 h-8 text-accent" />}
           href="/cinebench-scores"
         />
@@ -59,12 +59,30 @@ export default function HomePage() {
           icon={<BarChartHorizontalBig className="w-8 h-8 text-accent" />}
           href="/3dmark-scores"
         />
+         <FeatureCard
+          title="FurMark GPU Scores"
+          description="Assess GPU stability and thermal performance with FurMark scores."
+          icon={<Flame className="w-8 h-8 text-accent" />}
+          href="/furmark-scores"
+        />
+        <FeatureCard
+          title="PCMark Scores"
+          description="Evaluate overall system performance for various tasks with PCMark."
+          icon={<Gauge className="w-8 h-8 text-accent" />}
+          href="/pcmark-scores"
+        />
+        <FeatureCard
+          title="Geekbench Scores"
+          description="Measure CPU and GPU compute performance using Geekbench."
+          icon={<Brain className="w-8 h-8 text-accent" />}
+          href="/geekbench-scores"
+        />
         <FeatureCard
           title="Step-by-Step Guide"
           description="New to PC building? Our comprehensive guide walks you through the entire process."
           icon={<Wrench className="w-8 h-8 text-accent" />}
           href="/build-guide"
-          className="lg:col-span-1 xl:col-span-2" 
+          className="lg:col-span-1" 
         />
       </main>
 
@@ -93,7 +111,7 @@ interface FeatureCardProps {
 function FeatureCard({ title, description, icon, href, className }: FeatureCardProps) {
   return (
     <Link href={href} passHref>
-      <GlassCard className={cn("h-full flex flex-col group cursor-pointer", className)}>
+      <GlassCard className={cn("h-full flex flex-col group cursor-pointer hover:border-accent/50", className)}>
         <GlassCardHeader className="flex items-start justify-between">
           <div className="p-3 bg-accent/10 rounded-xl">
             {icon}

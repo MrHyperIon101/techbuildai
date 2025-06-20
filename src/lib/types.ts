@@ -1,4 +1,5 @@
 
+
 export interface Message {
   id: string;
   type: 'user' | 'ai' | 'system';
@@ -8,7 +9,17 @@ export interface Message {
   data?: any;
 }
 
-export type FeatureArea = 'builder' | 'components-db' | 'bottleneck-calculator' | 'general' | 'compatibility-checker' | 'cinebench-scores' | '3dmark-scores';
+export type FeatureArea = 
+  | 'builder' 
+  | 'components-db' 
+  | 'bottleneck-calculator' 
+  | 'general' 
+  | 'compatibility-checker' 
+  | 'cinebench-scores' 
+  | '3dmark-scores'
+  | 'furmark-scores'
+  | 'pcmark-scores'
+  | 'geekbench-scores';
 
 export interface PCComponent {
   name: string;
@@ -115,7 +126,7 @@ export interface CinebenchScoreEntry {
   cpuName: string;
   r23SingleCoreScore: number;
   r23MultiCoreScore: number;
-  r24SingleCoreScore?: number;
+  r24SingleCoreScore?: number; 
   r24MultiCoreScore?: number;
 }
 
@@ -136,3 +147,45 @@ export interface Gpu3dMarkScoresOutput {
   dataSourceNotes?: string;
 }
 
+export interface FurMarkScoreEntry {
+  gpuName: string;
+  preset: string; // e.g., "1080p Preset", "1440p (QHD)"
+  score: number;
+  averageFPS?: number;
+  maxTemperatureCelsius?: number;
+}
+
+export interface FurMarkScoresOutput {
+  scores: FurMarkScoreEntry[];
+  dataSourceNotes?: string;
+}
+
+export interface PCMarkScoreEntry {
+  systemIdentifier: string; // e.g., "Ryzen 5 5600X System", "High-end Gaming PC"
+  testVersion: string; // e.g., "PCMark 10"
+  overallScore: number;
+  essentialsScore?: number;
+  productivityScore?: number;
+  contentCreationScore?: number;
+}
+
+export interface PCMarkScoresOutput {
+  scores: PCMarkScoreEntry[];
+  dataSourceNotes?: string;
+}
+
+export interface GeekbenchScoreEntry {
+  componentName: string; // CPU or GPU name
+  version: string; // e.g., "Geekbench 6"
+  platform: string; // e.g., "Windows", "macOS"
+  singleCoreScore?: number;
+  multiCoreScore?: number;
+  openClScore?: number;
+  vulkanScore?: number;
+  metalScore?: number;
+}
+
+export interface GeekbenchScoresOutput {
+  scores: GeekbenchScoreEntry[];
+  dataSourceNotes?: string;
+}
