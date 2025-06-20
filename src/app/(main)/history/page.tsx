@@ -7,16 +7,16 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/
 import { SectionTitle } from '@/components/common/section-title';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Bot, User, Settings, Trash2, FileText, BarChart3, BarChartHorizontalBig, Search, Flame, Gauge, Brain, PackageSearch } from 'lucide-react';
+import { Bot, User, Settings, Trash2, FileText, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain, PackageSearch, ShieldCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Message, FeatureArea } from '@/lib/types';
 
 const featureIcons: Record<FeatureArea, React.ElementType> = {
   builder: Bot,
   'components-db': FileText,
-  'bottleneck-calculator': Search,
+  'bottleneck-calculator': AnalysisIcon,
   general: User, // Default/General Chat
-  'compatibility-checker': ShieldCheck, // Changed from Settings to ShieldCheck
+  'compatibility-checker': ShieldCheck, 
   'cinebench-scores': BarChart3,
   '3dmark-scores': BarChartHorizontalBig,
   'furmark-scores': Flame,
@@ -123,3 +123,4 @@ function HistoryItem({ message }: HistoryItemProps) {
     </div>
   );
 }
+
