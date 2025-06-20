@@ -1,4 +1,5 @@
 
+
 export interface Message {
   id: string;
   type: 'user' | 'ai' | 'system';
@@ -30,7 +31,6 @@ export interface BottleneckInfo {
   explanation: string;
 }
 
-// Updated ComponentDetails for richer information
 export interface ComponentSpec {
   spec: string; 
   value: string; 
@@ -47,13 +47,21 @@ export interface ShoppingLink {
   price?: string; 
 }
 
+export interface RelatedProduct {
+  name: string;
+  type: 'Laptop' | 'Pre-built PC';
+  keySpecs?: string[]; // e.g., ["CPU: i7-12700H", "RAM: 16GB DDR5", "Display: 15.6 inch QHD"]
+  price?: string; // e.g., "₹1,20,000"
+  shoppingLinks?: ShoppingLink[];
+}
+
 export interface ComponentDetails {
   componentNameFromAI?: string; 
-  overallSummary: string;
+  overallSummary?: string;
   keyFeatures?: string[];
   technicalCategories?: ComponentTechnicalCategory[];
   shoppingLinks?: ShoppingLink[];
-  imageUrl?: string;
+  relatedProducts?: RelatedProduct[]; // Laptops and Pre-built PCs
 }
 
 export interface BuildGuideStep {
@@ -64,4 +72,3 @@ export interface BuildGuideStep {
   imageHint?: string;
   details?: string[];
 }
-

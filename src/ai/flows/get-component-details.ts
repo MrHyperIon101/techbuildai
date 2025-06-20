@@ -3,9 +3,10 @@
 'use server';
 
 /**
- * @fileOverview Retrieves detailed, structured information about a specific PC component using AI.
+ * @fileOverview Retrieves detailed, structured information about a specific PC component using AI,
+ * including related laptops and pre-built PCs featuring the component.
  *
- * - getComponentDetails - A function that retrieves details about a specific PC component.
+ * - getComponentDetails - A function that retrieves details about a specific PC component and related products.
  * - GetComponentDetailsInput - The input type for the getComponentDetails function.
  * - GetComponentDetailsOutput - The return type for the getComponentDetails function.
  */
@@ -31,8 +32,16 @@ const ComponentTechnicalCategorySchema = z.object({
 
 const ShoppingLinkSchema = z.object({
   store: z.string().describe("Store name, e.g., 'Amazon.in', 'Flipkart.com'"),
-  url: z.string().describe("Direct product URL from the specified store"), // Changed from z.string().url()
+  url: z.string().describe("Direct product URL from the specified store"),
   price: z.string().optional().describe("Current price in INR, e.g., '₹65,000' (optional)"),
+});
+
+const RelatedProductSchema = z.object({
+  name: z.string().describe("Full name of the laptop or pre-built PC."),
+  type: z.enum(['Laptop', 'Pre-built PC']).describe("Type of the product."),
+  keySpecs: z.array(z.string()).optional().describe("A list of 2-3 key specifications relevant to the product type (e.g., 'CPU: i7-13700H', 'RAM: 16GB DDR5', 'Display: 16-inch QHD 165Hz' for laptops; 'CPU: Ryzen 5 5600X', 'GPU: RTX 3060', 'RAM: 16GB DDR4' for PCs)."),
+  price: z.string().optional().describe("Approximate current price in INR, e.g., '₹95,000' (optional)."),
+  shoppingLinks: z.array(ShoppingLinkSchema).optional().describe("Shopping links from Indian e-commerce sites (amazon.in or flipkart.com). Include price in INR if available directly on the link page."),
 });
 
 const GetComponentDetailsOutputSchema = z.object({
@@ -40,8 +49,8 @@ const GetComponentDetailsOutputSchema = z.object({
   overallSummary: z.string().optional().describe('A concise textual summary of the component, highlighting its main purpose and standing.'),
   keyFeatures: z.array(z.string()).optional().describe("A list of 3-5 key features of the component."),
   technicalCategories: z.array(ComponentTechnicalCategorySchema).optional().describe("Detailed technical specifications, grouped by category (e.g., 'Core Specs', 'Memory', 'Connectivity')."),
-  shoppingLinks: z.array(ShoppingLinkSchema).optional().describe("Shopping links from Indian e-commerce sites like amazon.in or flipkart.com. Include price in INR if available."),
-  imageUrl: z.string().optional().describe("A publicly accessible URL for a representative image of the component (optional)."), // Changed from z.string().url().optional()
+  shoppingLinks: z.array(ShoppingLinkSchema).optional().describe("Shopping links for the component itself from Indian e-commerce sites like amazon.in or flipkart.com. Include price in INR if available."),
+  relatedProducts: z.array(RelatedProductSchema).optional().describe("A list of up to 2 laptops and up to 2 pre-built PCs featuring the searched component. Prioritize products available on Indian e-commerce sites."),
 });
 
 export type GetComponentDetailsOutput = z.infer<typeof GetComponentDetailsOutputSchema>;
@@ -57,16 +66,21 @@ const getComponentDetailsPrompt = ai.definePrompt({
   prompt: `You are a PC hardware expert. For the component "{{{componentName}}}", provide a detailed breakdown in JSON format.
 The JSON object must conform to the output schema provided.
 
-Key details to include:
+Key details for the component itself:
 - componentNameFromAI: The full, official name of the component.
-- overallSummary: A concise summary (2-3 sentences). If a summary cannot be generated, this field can be omitted.
+- overallSummary: A concise summary (2-3 sentences). If a summary cannot begenerated, this field can be omitted.
 - keyFeatures: A list of 3-5 prominent features.
 - technicalCategories: Group specifications into relevant categories like "Core Specifications", "Memory", "Connectivity", "Power Requirements", "Physical Dimensions". Each category should have a list of spec-value pairs.
-- shoppingLinks: Provide 1-2 direct product links from amazon.in or flipkart.com. Include the current price in INR (e.g., "₹XX,XXX") if readily available.
-- imageUrl: A publicly accessible URL for a high-quality image of the component itself (not packaging or logos).
+- shoppingLinks: Provide 1-2 direct product links for the component itself from amazon.in or flipkart.com. Include the current price in INR (e.g., "₹XX,XXX") if readily available.
+
+In addition to the component details, find and include information about related products:
+- relatedProducts:
+  - Laptops: Find up to 2-3 laptops that prominently feature this component. For each laptop, provide its name, type ('Laptop'), a list of 2-3 key specifications (like CPU, RAM, Screen Size), its approximate price in INR, and shopping links from amazon.in or flipkart.com.
+  - Pre-built PCs: Find up to 2-3 pre-built PCs that prominently feature this component. For each PC, provide its name, type ('Pre-built PC'), a list of 2-3 key specifications (like CPU, RAM, an additional key component like storage or motherboard series), its approximate price in INR, and shopping links from amazon.in or flipkart.com.
 
 Ensure all technical details are accurate and derived from official or reputable sources.
-If a specific optional field's information is not found or not applicable, omit it from the JSON or set array fields to empty arrays.
+Prioritize products available on Indian e-commerce sites (amazon.in, flipkart.com) and provide direct links.
+If a specific optional field's information (like overallSummary for the component, or price/shoppingLinks for related products) is not found or not applicable, omit it from the JSON or set array fields to empty arrays.
 Focus on providing structured data as per the schema.
 `,
 });
@@ -86,4 +100,3 @@ const getComponentDetailsFlow = ai.defineFlow(
     return output;
   }
 );
-

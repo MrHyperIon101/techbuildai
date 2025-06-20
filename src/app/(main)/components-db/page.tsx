@@ -8,15 +8,16 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle, GlassCardFooter } from '@/components/common/glass-card';
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import { SectionTitle } from '@/components/common/section-title';
 import { LoadingSpinner } from '@/components/common/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
 import { handleGetComponentDetails } from '@/lib/actions';
-import type { ComponentDetails, ComponentTechnicalCategory, ShoppingLink } from '@/lib/types';
+import type { ComponentDetails, RelatedProduct, ShoppingLink } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Cpu, ShoppingCart, ExternalLink, ListChecks, Zap, Info } from 'lucide-react';
+import { Cpu, ShoppingCart, ExternalLink, ListChecks, Zap, Info, Laptop, MonitorPlay } from 'lucide-react';
+import Link from 'next/link';
 
 const componentSearchSchema = z.object({
   componentName: z.string().min(2, "Component name must be at least 2 characters.").max(100, "Component name is too long."),
@@ -120,11 +121,12 @@ export default function ComponentDetailsPage() {
             </GlassCardHeader>
             <GlassCardContent>
               <div className="space-y-4">
+                 {/* Image display section removed as per user request */}
                 <div>
                   <h3 className="text-xl font-semibold text-accent mb-2 flex items-center">
                     <Zap size={20} className="mr-2"/> Overall Summary
                   </h3>
-                  {details.overallSummary ? (
+                  {details.overallSummary && details.overallSummary.trim() !== '' ? (
                      <p className="text-foreground/90 prose prose-sm prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: details.overallSummary.replace(/\n/g, '<br />') }} />
                   ) : (
                     <p className="text-muted-foreground italic">Overall summary not available.</p>
@@ -193,48 +195,113 @@ export default function ComponentDetailsPage() {
             </GlassCard>
           )}
           
-          {details.shoppingLinks && details.shoppingLinks.length > 0 ? (
+          {details.shoppingLinks && details.shoppingLinks.length > 0 && (
             <GlassCard>
               <GlassCardHeader>
-                <GlassCardTitle>Shopping Links (India)</GlassCardTitle>
+                <GlassCardTitle>Shopping Links (Component)</GlassCardTitle>
               </GlassCardHeader>
               <GlassCardContent className="space-y-3">
                 {details.shoppingLinks.map((link, index) => (
-                  <a
-                    key={index}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-accent/10 transition-colors group"
-                  >
-                    <div className="flex items-center">
-                      <ShoppingCart size={20} className="mr-3 text-accent group-hover:text-accent-foreground" />
-                      <div>
-                        <span className="font-medium text-primary group-hover:text-accent-foreground">{link.store}</span>
-                        {link.price && <span className="ml-2 text-sm text-muted-foreground group-hover:text-accent-foreground/80"> - {link.price}</span>}
-                      </div>
-                    </div>
-                    <ExternalLink size={18} className="text-muted-foreground group-hover:text-accent-foreground" />
-                  </a>
+                  <ShoppingLinkDisplay key={`component-shop-${index}`} link={link} />
                 ))}
               </GlassCardContent>
             </GlassCard>
-          ) : (
+          )}
+
+          {details.relatedProducts && details.relatedProducts.length > 0 && (
             <GlassCard>
+              <GlassCardHeader>
+                <GlassCardTitle>Related Products (Laptops & Pre-built PCs)</GlassCardTitle>
+              </GlassCardHeader>
+              <GlassCardContent className="space-y-6">
+                {details.relatedProducts.map((product, index) => (
+                  <RelatedProductCard key={`related-${index}`} product={product} />
+                ))}
+                {details.relatedProducts.length === 0 && (
+                   <div className="flex items-center text-muted-foreground">
+                        <Info size={20} className="mr-2" />
+                        <p>No specific laptops or pre-built PCs found featuring this component.</p>
+                    </div>
+                )}
+              </GlassCardContent>
+            </GlassCard>
+          )}
+           {details.relatedProducts && details.relatedProducts.length === 0 && (!details.shoppingLinks || details.shoppingLinks.length ===0) && (
+             <GlassCard>
                 <GlassCardHeader>
-                    <GlassCardTitle>Shopping Links (India)</GlassCardTitle>
+                    <GlassCardTitle>Shopping & Related Products</GlassCardTitle>
                 </GlassCardHeader>
                 <GlassCardContent>
                      <div className="flex items-center text-muted-foreground">
                         <Info size={20} className="mr-2" />
-                        <p>Shopping links are not available for this component.</p>
+                        <p>No shopping links or related products are available for this component.</p>
                     </div>
                 </GlassCardContent>
             </GlassCard>
-          )}
+           )}
         </div>
       )}
     </div>
   );
 }
 
+function ShoppingLinkDisplay({ link }: { link: ShoppingLink }) {
+  return (
+    <a
+      href={link.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-accent/10 transition-colors group"
+    >
+      <div className="flex items-center">
+        <ShoppingCart size={20} className="mr-3 text-accent group-hover:text-accent-foreground" />
+        <div>
+          <span className="font-medium text-primary group-hover:text-accent-foreground">{link.store}</span>
+          {link.price && <span className="ml-2 text-sm text-muted-foreground group-hover:text-accent-foreground/80"> - {link.price}</span>}
+        </div>
+      </div>
+      <ExternalLink size={18} className="text-muted-foreground group-hover:text-accent-foreground" />
+    </a>
+  );
+}
+
+function RelatedProductCard({ product }: { product: RelatedProduct }) {
+  const ProductIcon = product.type === 'Laptop' ? Laptop : MonitorPlay;
+  return (
+    <div className="p-4 rounded-lg border border-white/10 bg-card/50 hover:bg-card/80 transition-colors duration-200 shadow-md">
+      <div className="flex items-center mb-2">
+        <ProductIcon size={24} className="mr-3 text-primary" />
+        <h4 className="text-lg font-semibold text-primary">{product.name} <span className="text-xs text-muted-foreground">({product.type})</span></h4>
+      </div>
+      
+      {product.price && (
+        <p className="text-xl font-bold text-accent mb-2">{product.price}</p>
+      )}
+
+      {product.keySpecs && product.keySpecs.length > 0 && (
+        <div className="mb-3">
+          <h5 className="text-sm font-medium text-muted-foreground mb-1">Key Specs:</h5>
+          <ul className="list-disc list-inside space-y-0.5 text-xs text-foreground/80 pl-1">
+            {product.keySpecs.map((spec, idx) => (
+              <li key={idx}>{spec}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {product.shoppingLinks && product.shoppingLinks.length > 0 && (
+        <div>
+          <h5 className="text-sm font-medium text-muted-foreground mb-1">Shop:</h5>
+          <div className="space-y-2">
+            {product.shoppingLinks.map((link, idx) => (
+              <ShoppingLinkDisplay key={`prod-shop-${idx}`} link={link} />
+            ))}
+          </div>
+        </div>
+      )}
+      {(!product.shoppingLinks || product.shoppingLinks.length === 0) && (
+         <p className="text-xs text-muted-foreground italic">No direct shopping links available for this product.</p>
+      )}
+    </div>
+  );
+}
