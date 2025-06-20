@@ -121,16 +121,11 @@ export default function ComponentDetailsPage() {
             </GlassCardHeader>
             <GlassCardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-1">
-                {details.imageUrl && typeof details.imageUrl === 'string' && details.imageUrl.trim() !== '' ? (
-                  <div className="relative aspect-square rounded-lg overflow-hidden shadow-lg">
-                    <Image src={details.imageUrl} alt={details.componentNameFromAI || searchedComponentName} layout="fill" objectFit="contain" data-ai-hint="component hardware"/>
-                  </div>
-                ) : (
-                  <div className="aspect-square rounded-lg bg-muted/30 flex flex-col items-center justify-center text-muted-foreground">
-                    <ImageOff size={48} />
-                    <p className="mt-2 text-sm">No image available</p>
-                  </div>
-                )}
+                {/* Image display is temporarily removed */}
+                <div className="aspect-square rounded-lg bg-muted/30 flex flex-col items-center justify-center text-muted-foreground">
+                  <ImageOff size={48} />
+                  <p className="mt-2 text-sm">Image display temporarily disabled</p>
+                </div>
               </div>
               <div className="md:col-span-2 space-y-4">
                 <div>
