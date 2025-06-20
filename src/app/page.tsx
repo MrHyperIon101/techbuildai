@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import Link from 'next/link';
-import { ArrowRight, BarChart3 as AnalysisIcon, Bot, Cpu, Wrench, PcCase, ShieldCheck, BarChart3 } from 'lucide-react'; // Renamed BarChart to AnalysisIcon to avoid conflict
+import { ArrowRight, Bot, Cpu, Wrench, ShieldCheck, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function HomePage() {
@@ -22,7 +22,7 @@ export default function HomePage() {
         </p>
       </header>
 
-      <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl w-full animate-slide-in-up ">
+      <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 max-w-7xl w-full animate-slide-in-up ">
         <FeatureCard
           title="AI PC Builder"
           description="Get personalized PC component recommendations based on your budget and needs. Powered by cutting-edge AI."
@@ -38,7 +38,7 @@ export default function HomePage() {
         <FeatureCard
           title="Bottleneck Calculator"
           description="Identify potential performance bottlenecks in your build with our smart calculator."
-          icon={<AnalysisIcon className="w-8 h-8 text-accent" />} // Changed icon to avoid conflict
+          icon={<AnalysisIcon className="w-8 h-8 text-accent" />} 
           href="/bottleneck-calculator"
         />
         <FeatureCard
@@ -54,13 +54,18 @@ export default function HomePage() {
           href="/cinebench-scores"
         />
         <FeatureCard
+          title="3DMark GPU Scores"
+          description="Compare GPU performance with 3DMark benchmark scores from various sources."
+          icon={<BarChartHorizontalBig className="w-8 h-8 text-accent" />}
+          href="/3dmark-scores"
+        />
+        <FeatureCard
           title="Step-by-Step Guide"
           description="New to PC building? Our comprehensive guide walks you through the entire process."
           icon={<Wrench className="w-8 h-8 text-accent" />}
           href="/build-guide"
+          className="lg:col-span-1 xl:col-span-2" 
         />
-         {/* Removed the generic PcCase card to make space for Cinebench card on some layouts or to keep grid balanced. */}
-         {/* You can add another card here if you want to maintain a 3x2 grid or similar. */}
       </main>
 
       <footer className="mt-16 text-center animate-fade-in">

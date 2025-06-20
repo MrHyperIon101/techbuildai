@@ -6,9 +6,10 @@ import { getComponentDetails, GetComponentDetailsInput } from '@/ai/flows/get-co
 import { calculateBottleneck, CalculateBottleneckInput } from '@/ai/flows/calculate-bottleneck';
 import { checkCompatibility, CheckCompatibilityInput } from '@/ai/flows/check-compatibility';
 import { getCinebenchScores, GetCinebenchScoresInput } from '@/ai/flows/get-cinebench-scores';
+import { get3dMarkScores, Get3dMarkScoresInput } from '@/ai/flows/get-3dmark-scores';
 
 
-import type { BuildSuggestion, BottleneckInfo, ComponentDetails, CompatibilityReport, CinebenchScoresOutput } from './types';
+import type { BuildSuggestion, BottleneckInfo, ComponentDetails, CompatibilityReport, CinebenchScoresOutput, Gpu3dMarkScoresOutput } from './types';
 
 export async function handleSuggestPcBuild(input: SuggestPcBuildInput): Promise<BuildSuggestion> {
   try {
@@ -102,5 +103,21 @@ export async function handleGetCinebenchScores(input: GetCinebenchScoresInput): 
         throw error;
     }
     throw new Error("Failed to retrieve Cinebench scores. Please try again.");
+  }
+}
+
+export async function handleGet3dMarkScores(input: Get3dMarkScoresInput): Promise<Gpu3dMarkScoresOutput> {
+  try {
+    const result = await get3dMarkScores(input);
+    if (result && !Array.isArray(result.scores)) {
+      result.scores = [];
+    }
+    return result as Gpu3dMarkScoresOutput;
+  } catch (error) {
+    console.error("Error in handleGet3dMarkScores:", error);
+    if (error instanceof Error && error.message.includes("AI response did not match")) {
+        throw error;
+    }
+    throw new Error("Failed to retrieve 3DMark scores. Please try again.");
   }
 }

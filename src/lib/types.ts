@@ -8,7 +8,7 @@ export interface Message {
   data?: any;
 }
 
-export type FeatureArea = 'builder' | 'components-db' | 'bottleneck-calculator' | 'general' | 'compatibility-checker' | 'cinebench-scores';
+export type FeatureArea = 'builder' | 'components-db' | 'bottleneck-calculator' | 'general' | 'compatibility-checker' | 'cinebench-scores' | '3dmark-scores';
 
 export interface PCComponent {
   name: string;
@@ -122,4 +122,16 @@ export interface CinebenchScoreEntry {
 export interface CinebenchScoresOutput {
   scores: CinebenchScoreEntry[];
   dataSourceNotes?: string; // e.g. "Scores compiled from various tech review sites, accuracy may vary."
+}
+
+export interface Gpu3dMarkScoreEntry {
+  gpuName: string;
+  benchmarkName: string; // e.g., "Time Spy Graphics", "Port Royal"
+  score: number;
+  notes?: string;
+}
+
+export interface Gpu3dMarkScoresOutput {
+  scores: Gpu3dMarkScoreEntry[];
+  dataSourceNotes?: string;
 }

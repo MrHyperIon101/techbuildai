@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -6,15 +7,18 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/
 import { SectionTitle } from '@/components/common/section-title';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Bot, User, Settings, Trash2, FileText } from 'lucide-react';
+import { Bot, User, Settings, Trash2, FileText, BarChart3, BarChartHorizontalBig, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Message, FeatureArea } from '@/lib/types';
 
 const featureIcons: Record<FeatureArea, React.ElementType> = {
   builder: Bot,
   'components-db': FileText,
-  'bottleneck-calculator': Settings,
+  'bottleneck-calculator': Search, // Using Search icon for Bottleneck
   general: User,
+  'compatibility-checker': Settings, // Using Settings(ShieldCheck before) for Compatibility
+  'cinebench-scores': BarChart3,
+  '3dmark-scores': BarChartHorizontalBig,
 };
 
 const featureNames: Record<FeatureArea, string> = {
@@ -22,6 +26,9 @@ const featureNames: Record<FeatureArea, string> = {
   'components-db': 'Component DB',
   'bottleneck-calculator': 'Bottleneck Calculator',
   general: 'General Chat',
+  'compatibility-checker': 'Compatibility Checker',
+  'cinebench-scores': 'Cinebench Scores',
+  '3dmark-scores': '3DMark Scores',
 };
 
 
@@ -52,7 +59,7 @@ export default function ConversationHistoryPage() {
           <ScrollArea className="h-[60vh] p-1 pr-3">
             {sortedMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full py-10 text-center">
-                <History className="w-16 h-16 text-muted-foreground mb-4" />
+                <HistoryIcon className="w-16 h-16 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">No conversation history yet.</p>
                 <p className="text-sm text-muted-foreground/70 mt-1">Start interacting with the AI features to see your history here.</p>
               </div>
@@ -112,11 +119,10 @@ function HistoryItem({ message }: HistoryItemProps) {
 }
 
 // Placeholder for History icon if not available in lucide-react
-const History = ({className}: {className?: string}) => (
+const HistoryIcon = ({className}: {className?: string}) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M3 3v5h5"/>
     <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>
     <path d="M12 7v5l3.5 2"/>
   </svg>
 );
-
