@@ -14,7 +14,9 @@ import { compatibilityCheckTool } from './check-compatibility';
 
 const SuggestPcBuildInputSchema = z.object({
   budget: z.number().describe('The budget for the PC build in INR.'),
-  desiredUsage: z.string().describe('The desired usage of the PC (e.g., gaming, video editing).'),
+  pcType: z.enum(['Gaming', 'Workstation', 'Productivity/General Use', 'Server']).describe('The primary type of PC build.'),
+  storageRequirement: z.string().describe('The user-specified storage requirement (e.g., "1TB NVMe SSD", "2TB SSD and 4TB HDD").'),
+  desiredUsage: z.string().optional().describe('Any additional notes or specific desired usage points for the PC (e.g., "likes to play competitive shooters", "needs to run many VMs").'),
   includePeripherals: z.boolean().optional().describe('Whether to include peripherals like monitor, keyboard, and mouse in the budget.'),
   chassisSize: z.enum(['Any', 'SFF', 'Mini-Tower', 'Mid-Tower', 'Full-Tower']).optional().describe('The desired case/chassis size for the build. SFF stands for Small Form Factor.'),
   buildTheme: z.string().optional().describe('A desired aesthetic theme for the build (e.g., "all white", "black with RGB", "wood accent", "minimalist no RGB").'),
@@ -48,7 +50,11 @@ const prompt = ai.definePrompt({
   tools: [compatibilityCheckTool],
   input: {schema: SuggestPcBuildInputSchema},
   output: {schema: SuggestPcBuildOutputSchema},
-  prompt: `You are an expert PC builder. A user wants to build a PC with a budget of {{budget}} INR for {{desiredUsage}}.
+  prompt: `You are an expert PC builder. A user wants to build a PC with a budget of {{budget}} INR.
+
+**Primary Purpose & Requirements:**
+- **PC Type**: {{pcType}}. This is the main goal. Tailor your component choices accordingly (e.g., for 'Gaming', prioritize GPU and a high-refresh-rate CPU; for 'Workstation', prioritize CPU cores, RAM capacity, and fast storage; for 'Server', focus on CPU cores, ECC RAM if possible within budget, and storage reliability).
+- **Storage**: You **MUST** fulfill the user's storage requirement of "{{storageRequirement}}". This means the 'Storage' component(s) you select must match this description.
 
 **CRITICAL INSTRUCTIONS:**
 1.  **Compatibility First:** After making a preliminary selection of components, you **MUST** use the \`compatibilityCheckTool\`. Provide it with the CPU, motherboard, RAM, GPU, PSU, and Case you have selected.
@@ -63,6 +69,7 @@ const prompt = ai.definePrompt({
 
 **User Preferences:**
 {{#if includePeripherals}}The user wants to include peripherals (monitor, keyboard, mouse) within this budget.{{/if}}
+{{#if desiredUsage}}- Additional Notes: {{desiredUsage}}{{/if}}
 The user has also specified the following preferences, which you must follow:
 {{#if chassisSize}}
 - Desired Chassis Size: {{chassisSize}}. You must select a PC Case that fits this size requirement (e.g., ATX Mid-Tower, mITX for SFF). This will also constrain your motherboard choice (e.g., an ITX or Micro-ATX motherboard for SFF builds).

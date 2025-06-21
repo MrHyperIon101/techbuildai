@@ -28,7 +28,9 @@ import { Badge } from '@/components/ui/badge';
 
 const builderFormSchema = z.object({
   budget: z.coerce.number().min(8000, "Budget must be at least ₹8,000").max(8000000, "Budget cannot exceed ₹8,000,000"),
-  desiredUsage: z.string().min(10, "Please describe your needs in at least 10 characters.").max(500, "Description is too long."),
+  pcType: z.enum(['Gaming', 'Workstation', 'Productivity/General Use', 'Server']),
+  storageRequirement: z.string().min(5, "Please specify storage (e.g., 1TB SSD).").max(100, "Storage requirement is too long."),
+  desiredUsage: z.string().max(500, "Description is too long.").optional(),
   includePeripherals: z.boolean().default(false),
   chassisSize: z.enum(['Any', 'SFF', 'Mini-Tower', 'Mid-Tower', 'Full-Tower']).default('Any'),
   buildTheme: z.string().max(100, "Theme description is too long.").optional(),
@@ -67,7 +69,9 @@ export default function AiPcBuilderPage() {
     resolver: zodResolver(builderFormSchema),
     defaultValues: {
       budget: 80000,
-      desiredUsage: 'Gaming at 1440p and some light video editing.',
+      pcType: 'Gaming',
+      storageRequirement: '1TB NVMe SSD',
+      desiredUsage: 'I mainly play games like Cyberpunk 2077 and stream sometimes.',
       includePeripherals: false,
       chassisSize: 'Any',
       buildTheme: '',
@@ -81,7 +85,7 @@ export default function AiPcBuilderPage() {
     setBottleneckReport(null);
     setGamingReport(null);
 
-    const userMessage = `Budget: ₹${data.budget}, Usage: ${data.desiredUsage}, Peripherals: ${data.includePeripherals}, Size: ${data.chassisSize}, Theme: ${data.buildTheme || 'None'}`;
+    const userMessage = `Type: ${data.pcType}, Storage: ${data.storageRequirement}, Budget: ₹${data.budget}, Peripherals: ${data.includePeripherals}, Size: ${data.chassisSize}, Theme: ${data.buildTheme || 'None'}, Notes: ${data.desiredUsage || 'None'}`;
     addMessage({ type: 'user', feature: 'builder', content: userMessage });
 
     try {
@@ -160,18 +164,53 @@ export default function AiPcBuilderPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="desiredUsage"
+                  name="pcType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Desired Usage</FormLabel>
+                      <FormLabel>PC Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-background/50 rounded-full px-4">
+                            <SelectValue placeholder="Select the primary use case" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Gaming">Gaming</SelectItem>
+                          <SelectItem value="Workstation">Workstation</SelectItem>
+                          <SelectItem value="Productivity/General Use">Productivity/General Use</SelectItem>
+                          <SelectItem value="Server">Server</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="storageRequirement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Storage Requirement</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="e.g., High-end gaming, 4K video editing, streaming" {...field} className="bg-background/50 rounded-xl p-4 min-h-[100px]" />
+                        <Input placeholder="e.g., 1TB NVMe SSD, 2TB SSD + 4TB HDD" {...field} className="bg-background/50 rounded-full px-4" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
+                <FormField
+                  control={form.control}
+                  name="desiredUsage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Additional Notes (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="e.g., Must be quiet, need WiFi, plan to overclock..." {...field} className="bg-background/50 rounded-xl p-4 min-h-[100px]" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
