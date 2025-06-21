@@ -32,7 +32,7 @@ const EstimateGamingPerformanceOutputSchema = z.object({
 export type EstimateGamingPerformanceOutput = z.infer<typeof EstimateGamingPerformanceOutputSchema>;
 
 
-export async function estimateGamingPerformance(input: EstimateGamingPerformanceInput): Promise<GamingPerformanceOutput> {
+export async function estimateGamingPerformance(input: EstimateGamingPerformanceInput): Promise<EstimateGamingPerformanceOutput> {
   return estimateGamingPerformanceFlow(input);
 }
 
