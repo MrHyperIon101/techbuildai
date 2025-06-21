@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -16,12 +15,13 @@ import { useToast } from '@/hooks/use-toast';
 import { handleSuggestPcBuild } from '@/lib/actions';
 import type { BuildSuggestion, PCComponent } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
-import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, MemoryStick, HardDrive, Power, HardDriveDownload, Monitor, Keyboard, Mouse } from 'lucide-react';
+import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, MemoryStick, HardDrive, Power, HardDriveDownload, Monitor, Keyboard, Mouse, TestTube2 } from 'lucide-react';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { BenchmarkResults } from '@/components/common/benchmark-results';
 
 const builderFormSchema = z.object({
   budget: z.coerce.number().min(8000, "Budget must be at least ₹8,000").max(8000000, "Budget cannot exceed ₹8,000,000"),
@@ -49,6 +49,7 @@ const componentIcons: { [key: string]: React.ElementType } = {
 export default function AiPcBuilderPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<BuildSuggestion | null>(null);
+  const [isBenchmarkDialogOpen, setIsBenchmarkDialogOpen] = useState(false);
   const { toast } = useToast();
   const { addMessage } = useConversation();
 
@@ -249,7 +250,7 @@ export default function AiPcBuilderPage() {
                 <p className="text-sm text-muted-foreground/70 mt-2">Fill out the form and click "Generate Build".</p>
               </div>
             )}
-            {suggestion && (
+            {suggestion && analysisLinks && (
               <div className="space-y-6 animate-fade-in">
                 <div>
                   <h3 className="text-xl font-semibold text-accent mb-1">Overall Performance: {suggestion.overallPerformance}</h3>
@@ -267,67 +268,47 @@ export default function AiPcBuilderPage() {
                 <div className="mt-4 space-y-3">
                     <div>
                         <h4 className="text-lg font-semibold text-primary mb-2">Build Analysis</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                           <Dialog open={isBenchmarkDialogOpen} onOpenChange={setIsBenchmarkDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
+                                        <TestTube2 className="mr-2 h-4 w-4" /> Show Benchmarks
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl">
+                                    <DialogHeader>
+                                        <DialogTitle>Benchmark Scores for {analysisLinks.cpu} & {analysisLinks.gpu}</DialogTitle>
+                                    </DialogHeader>
+                                    {isBenchmarkDialogOpen && analysisLinks.cpu && analysisLinks.gpu && (
+                                        <BenchmarkResults cpuName={analysisLinks.cpu} gpuName={analysisLinks.gpu} />
+                                    )}
+                                </DialogContent>
+                            </Dialog>
+
                             {analysisLinks?.bottleneck && (
                                 <Link href={analysisLinks.bottleneck} passHref>
                                     <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                        <BarChart3 className="mr-2 h-4 w-4" /> Check Bottlenecks
+                                        <BarChart3 className="mr-2 h-4 w-4" /> Bottleneck
                                     </Button>
                                 </Link>
                             )}
                              {analysisLinks?.compatibility && (
                                 <Link href={analysisLinks.compatibility} passHref>
                                     <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                        <ShieldCheck className="mr-2 h-4 w-4" /> Check Compatibility
+                                        <ShieldCheck className="mr-2 h-4 w-4" /> Compatibility
                                     </Button>
                                 </Link>
                             )}
                              {analysisLinks?.gaming && (
                                 <Link href={analysisLinks.gaming} passHref>
                                     <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                        <Gamepad2 className="mr-2 h-4 w-4" /> Estimate Gaming FPS
+                                        <Gamepad2 className="mr-2 h-4 w-4" /> Gaming FPS
                                     </Button>
                                 </Link>
                             )}
                         </div>
                     </div>
-                    <div>
-                        <h4 className="text-lg font-semibold text-primary mb-2">Component Benchmarks</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                           {analysisLinks?.cpu && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                    <Cpu className="mr-2 h-4 w-4" /> Check CPU Scores
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                  <DropdownMenuItem asChild><Link href={`/cinebench-scores?cpuName=${encodeURIComponent(analysisLinks.cpu!)}`}>Cinebench</Link></DropdownMenuItem>
-                                  <DropdownMenuItem asChild><Link href={`/geekbench-scores?componentName=${encodeURIComponent(analysisLinks.cpu!)}`}>Geekbench</Link></DropdownMenuItem>
-                                  <DropdownMenuItem asChild><Link href={`/aida64-scores?componentQuery=${encodeURIComponent(analysisLinks.cpu!)}`}>AIDA64</Link></DropdownMenuItem>
-                                  <DropdownMenuItem asChild><Link href={`/userbenchmark-scores?componentName=${encodeURIComponent(analysisLinks.cpu!)}`}>UserBenchmark</Link></DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                            {analysisLinks?.gpu && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                    <Video className="mr-2 h-4 w-4" /> Check GPU Scores
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                  <DropdownMenuItem asChild><Link href={`/3dmark-scores?gpuName=${encodeURIComponent(analysisLinks.gpu!)}`}>3DMark</Link></DropdownMenuItem>
-                                  <DropdownMenuItem asChild><Link href={`/furmark-scores?gpuName=${encodeURIComponent(analysisLinks.gpu!)}`}>FurMark</Link></DropdownMenuItem>
-                                  <DropdownMenuItem asChild><Link href={`/geekbench-scores?componentName=${encodeURIComponent(analysisLinks.gpu!)}`}>Geekbench</Link></DropdownMenuItem>
-                                  <DropdownMenuItem asChild><Link href={`/userbenchmark-scores?componentName=${encodeURIComponent(analysisLinks.gpu!)}`}>UserBenchmark</Link></DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                        </div>
-                    </div>
                 </div>
-
               </div>
             )}
           </GlassCardContent>
