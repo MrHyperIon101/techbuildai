@@ -17,16 +17,18 @@ const SuggestPcBuildInputSchema = z.object({
 });
 export type SuggestPcBuildInput = z.infer<typeof SuggestPcBuildInputSchema>;
 
+const ComponentTypeEnum = z.enum(['CPU', 'GPU', 'RAM', 'Motherboard', 'Storage', 'PSU', 'Case']);
+
 const SuggestPcBuildOutputSchema = z.object({
   components: z.array(
     z.object({
       name: z.string().describe('The name of the component.'),
-      type: z.string().describe('The type of component (e.g., CPU, GPU, RAM).'),
+      type: ComponentTypeEnum.describe('The type of component. Must be one of: CPU, GPU, RAM, Motherboard, Storage, PSU, Case.'),
       price: z.number().describe('The price of the component in INR.'),
       estimatedPerformance: z.string().describe('Estimated performance of the component for the given usage.'),
       link: z.string().describe('Link to buy the component from amazon.in or flipkart.com')
     })
-  ).describe('A list of suggested PC components.'),
+  ).describe('A list of suggested PC components. This list MUST include one of each of the following component types: CPU, GPU, RAM, Motherboard, Storage, PSU, and Case.'),
   estimatedTotalCost: z.number().describe('The estimated total cost of the PC build in INR.'),
   overallPerformance: z.string().describe('Overall performance of the build for the specified usage.'),
   buildExplanation: z.string().describe('Explanation of why these components were chosen.')
@@ -43,10 +45,27 @@ const prompt = ai.definePrompt({
   output: {schema: SuggestPcBuildOutputSchema},
   prompt: `You are an expert PC builder. A user wants to build a PC with a budget of {{budget}} INR for {{desiredUsage}}.
 
-  Suggest specific components (component name, type, price, estimated performance and link to buy) for the build, and provide the estimated total cost, overall performance, and an explanation of why these components were chosen.
-  Consider real-time component pricing and availability. Prioritize components available on Indian e-commerce sites like amazon.in or flipkart.com and provide direct links to these sites.
+  Your task is to suggest a complete and compatible set of PC components. You MUST suggest exactly one of each of the following core components:
+  - CPU
+  - Motherboard
+  - RAM (e.g., "16GB DDR4 3200MHz")
+  - GPU (Graphics Card)
+  - Storage (e.g., "1TB NVMe SSD")
+  - PSU (Power Supply Unit) (e.g., "750W Gold")
+  - Case (e.g., "Mid Tower ATX")
 
-  Make sure you return all the components and total cost as specified in the output schema.
+  For each component, provide:
+  - The specific model name.
+  - The component type (must be one of 'CPU', 'Motherboard', 'RAM', 'GPU', 'Storage', 'PSU', 'Case').
+  - An estimated price in INR.
+  - A brief description of its estimated performance.
+  - A shopping link, preferably from amazon.in or flipkart.com.
+
+  Also provide the estimated total cost for all components, an overall performance summary, and an explanation of your choices.
+  Ensure the components are compatible with each other. For example, the CPU socket must match the motherboard socket, and the motherboard and case form factors must be compatible.
+
+  Prioritize components available on Indian e-commerce sites.
+  Respond with a JSON object that strictly follows the output schema.
   `,
 });
 
