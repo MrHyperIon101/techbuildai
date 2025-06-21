@@ -11,7 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const CompareComponentsInputSchema = z.object({
+const CompareComponentsInputSchema = z.object({
   componentA: z.string().min(3).describe('The first component model to compare.'),
   componentB: z.string().min(3).describe('The second component model to compare.'),
   componentType: z.enum(['CPU', 'GPU']).describe('The type of components being compared.'),
@@ -25,7 +25,7 @@ const ComparisonPointSchema = z.object({
     verdict: z.string().describe("A brief verdict on this specific metric (e.g., 'Component A is faster', 'Component B has more cores', 'Roughly equivalent')."),
 });
 
-export const CompareComponentsOutputSchema = z.object({
+const CompareComponentsOutputSchema = z.object({
   winner: z.enum(['Component A', 'Component B', 'It depends', 'Inconclusive']).describe("The overall winner of the comparison. Use 'It depends' if the winner varies by use case. Use 'Inconclusive' if a definitive comparison cannot be made."),
   summary: z.string().describe("A detailed summary explaining the comparison, the nuances, and the rationale for the 'winner' choice. Should mention key strengths and weaknesses of each component and for what use cases one might be better than the other."),
   comparisonPoints: z.array(ComparisonPointSchema).describe("A list of structured, point-by-point comparisons of key metrics."),
