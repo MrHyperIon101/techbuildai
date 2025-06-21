@@ -7,7 +7,7 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/
 import { SectionTitle } from '@/components/common/section-title';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Bot, User, Settings, Trash2, FileText, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain, PackageSearch, ShieldCheck, ClipboardList, Users, GitCompareArrows, Gamepad2 } from 'lucide-react';
+import { Bot, User, Settings, Trash2, FileText, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain, PackageSearch, ShieldCheck, ClipboardList, Users, GitCompareArrows, Gamepad2, BookOpen } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Message, FeatureArea } from '@/lib/types';
 
@@ -26,6 +26,7 @@ const featureIcons: Record<FeatureArea, React.ElementType> = {
   'userbenchmark-scores': Users,
   'compare-components': GitCompareArrows,
   'gaming-estimator': Gamepad2,
+  'build-guide': BookOpen,
 };
 
 const featureNames: Record<FeatureArea, string> = {
@@ -43,6 +44,7 @@ const featureNames: Record<FeatureArea, string> = {
   'userbenchmark-scores': 'UserBenchmark Scores',
   'compare-components': 'Component Comparison',
   'gaming-estimator': 'Gaming Estimator',
+  'build-guide': 'PC Build Guide',
 };
 
 

@@ -22,7 +22,8 @@ export type FeatureArea =
   | 'aida64-scores'
   | 'userbenchmark-scores'
   | 'compare-components'
-  | 'gaming-estimator';
+  | 'gaming-estimator'
+  | 'build-guide';
 
 export interface PCComponent {
   name: string;
