@@ -52,25 +52,26 @@ const prompt = ai.definePrompt({
   output: {schema: SuggestPcBuildOutputSchema},
   prompt: `You are an expert PC builder. A user wants to build a PC with a budget of {{budget}} INR.
 
-**Primary Purpose & Requirements:**
+**THE MOST IMPORTANT RULE: The 'estimatedTotalCost' of your final build suggestion MUST NOT exceed the user's budget of {{budget}} INR. This budget rule is absolute and overrides all other user requests. If a user's request (like a very large SSD or a high-end CPU for a low budget) makes it impossible to stay within budget, you MUST prioritize the budget by selecting more affordable components. You must then explain this necessary compromise in the 'buildExplanation' field.**
+
+**Primary Purpose & Requirements (To be met ONLY if they fit within the budget):**
 - **PC Type**: {{pcType}}. This is the main goal. Tailor your component choices accordingly (e.g., for 'Gaming', prioritize GPU and a high-refresh-rate CPU; for 'Workstation', prioritize CPU cores, RAM capacity, and fast storage; for 'Server', focus on CPU cores, ECC RAM if possible within budget, and storage reliability).
-- **Storage**: You **MUST** fulfill the user's storage requirement of "{{storageRequirement}}". This means the 'Storage' component(s) you select must match this description.
+- **Storage**: The user's ideal storage requirement is "{{storageRequirement}}". You should attempt to meet this, but if it conflicts with the budget, you MUST choose a smaller, more affordable storage option (e.g., suggest a 1TB or 2TB SSD if an 8TB SSD is requested for a low-budget build).
 
 **CRITICAL INSTRUCTIONS:**
 1.  **Compatibility First:** After making a preliminary selection of components, you **MUST** use the \`compatibilityCheckTool\`. Provide it with the CPU, motherboard, RAM, GPU, PSU, and Case you have selected.
 2.  **Review and Revise:** If the tool returns **any** issues (i.e., the 'issues' array is not empty or 'isGenerallyCompatible' is false), you **MUST** revise your component choices to fix the problems. You may need to change the motherboard, RAM type, case size, etc.
 3.  **Re-Verify:** After revising, you must call the \`compatibilityCheckTool\` again to ensure the new build is free of issues. Repeat this process until the tool returns an empty 'issues' array and 'isGenerallyCompatible' is true.
-4.  **Final Output:** Only provide the final, fully compatible build as your response. Do not describe the intermediate steps or compatibility errors you encountered and fixed. The final build must be compatible.
+4.  **Final Output:** Only provide the final, fully compatible build as your response. Do not describe the intermediate steps or compatibility errors you encountered and fixed. The final build must be compatible AND within budget.
 
 **Budget and Component Choices:**
-- It is absolutely critical that the 'estimatedTotalCost' of your suggested build does NOT exceed this budget.
 - For builds with a budget under 100,000 INR, prioritize cost-effective RAM (e.g., standard speed DDR4 or DDR5 without large heat spreaders or RGB) to save money. For higher budgets, you can select faster or aesthetically pleasing RAM that matches the build theme.
 - You MUST suggest exactly one of each of the following core components: CPU, Motherboard, RAM, GPU, Storage, PSU, Case, CPU Cooler, Thermal Paste.
 
 **User Preferences:**
 {{#if includePeripherals}}The user wants to include peripherals (monitor, keyboard, mouse) within this budget.{{/if}}
 {{#if desiredUsage}}- Additional Notes: {{desiredUsage}}{{/if}}
-The user has also specified the following preferences, which you must follow:
+The user has also specified the following preferences, which you must follow as long as they do not violate the budget rule:
 {{#if chassisSize}}
 - Desired Chassis Size: {{chassisSize}}. You must select a PC Case that fits this size requirement (e.g., ATX Mid-Tower, mITX for SFF). This will also constrain your motherboard choice (e.g., an ITX or Micro-ATX motherboard for SFF builds).
 {{/if}}
