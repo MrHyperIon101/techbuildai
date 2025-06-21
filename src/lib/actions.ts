@@ -12,7 +12,8 @@ import { getPCMarkScores, GetPCMarkScoresInput } from '@/ai/flows/get-pcmark-sco
 import { getGeekbenchScores, GetGeekbenchScoresInput } from '@/ai/flows/get-geekbench-scores';
 import { getAida64Scores, GetAida64ScoresInput } from '@/ai/flows/get-aida64-scores';
 import { getUserBenchmarkScores, GetUserBenchmarkScoresInput } from '@/ai/flows/get-userbenchmark-scores';
-
+import { compareComponents, CompareComponentsInput } from '@/ai/flows/compare-components';
+import { estimateGamingPerformance, EstimateGamingPerformanceInput } from '@/ai/flows/estimate-gaming-performance';
 
 import type { 
     BuildSuggestion, 
@@ -25,7 +26,9 @@ import type {
     PCMarkScoresOutput,
     GeekbenchScoresOutput,
     Aida64ScoresOutput,
-    UserBenchmarkScoresOutput
+    UserBenchmarkScoresOutput,
+    CompareComponentsOutput,
+    GamingPerformanceOutput
 } from './types';
 
 export async function handleSuggestPcBuild(input: SuggestPcBuildInput): Promise<BuildSuggestion> {
@@ -217,4 +220,23 @@ export async function handleGetUserBenchmarkScores(input: GetUserBenchmarkScores
     throw new Error("Failed to retrieve UserBenchmark scores. The AI may have had trouble interpreting the component name or the requested format. Please try again or refine your search term.");
   }
 }
-    
+
+export async function handleCompareComponents(input: CompareComponentsInput): Promise<CompareComponentsOutput> {
+    try {
+      const result = await compareComponents(input);
+      return result as CompareComponentsOutput;
+    } catch (error) {
+      console.error("Error in handleCompareComponents:", error);
+      throw new Error("Failed to compare components. Please try again.");
+    }
+}
+  
+export async function handleEstimateGamingPerformance(input: EstimateGamingPerformanceInput): Promise<GamingPerformanceOutput> {
+    try {
+        const result = await estimateGamingPerformance(input);
+        return result as GamingPerformanceOutput;
+    } catch (error) {
+        console.error("Error in handleEstimateGamingPerformance:", error);
+        throw new Error("Failed to estimate gaming performance. Please try again.");
+    }
+}

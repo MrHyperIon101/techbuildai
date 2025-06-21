@@ -13,5 +13,7 @@ import '@/ai/flows/get-pcmark-scores.ts';
 import '@/ai/flows/get-geekbench-scores.ts';
 import '@/ai/flows/get-aida64-scores.ts';
 import '@/ai/flows/get-userbenchmark-scores.ts';
+import '@/ai/flows/compare-components.ts';
+import '@/ai/flows/estimate-gaming-performance.ts';
 
     

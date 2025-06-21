@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { handleSuggestPcBuild } from '@/lib/actions';
 import type { BuildSuggestion, PCComponent } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
-import { AlertCircle, CheckCircle, ShoppingCart, BarChart3, Bot } from 'lucide-react';
+import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, MemoryStick, HardDrive, Power, HardDriveDownload } from 'lucide-react';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -26,6 +26,16 @@ const builderFormSchema = z.object({
 });
 
 type BuilderFormValues = z.infer<typeof builderFormSchema>;
+
+const componentIcons: { [key: string]: React.ElementType } = {
+  cpu: Cpu,
+  gpu: Video,
+  ram: MemoryStick,
+  storage: HardDrive,
+  motherboard: HardDriveDownload, // Represents chipset/motherboard
+  psu: Power,
+  case: (props) => <div {...props} className="w-5 h-5 border-2 rounded-sm border-current" />, // Custom case icon
+};
 
 export default function AiPcBuilderPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +78,37 @@ export default function AiPcBuilderPage() {
   };
   
   const conversationMessages = getMessagesByFeature('builder');
+
+  const analysisLinks = useMemo(() => {
+    if (!suggestion) return null;
+
+    const cpu = suggestion.components.find(c => c.type.toLowerCase() === 'cpu')?.name;
+    const gpu = suggestion.components.find(c => c.type.toLowerCase() === 'gpu')?.name;
+    const ram = suggestion.components.find(c => c.type.toLowerCase() === 'ram')?.name;
+    const motherboard = suggestion.components.find(c => c.type.toLowerCase() === 'motherboard')?.name;
+    const psu = suggestion.components.find(c => c.type.toLowerCase() === 'psu')?.name;
+    const pcCase = suggestion.components.find(c => c.type.toLowerCase() === 'case')?.name;
+    const storage = suggestion.components.find(c => c.type.toLowerCase() === 'storage')?.name;
+    
+    const compatibilityParams = new URLSearchParams();
+    if (cpu) compatibilityParams.set('cpu', cpu);
+    if (gpu) compatibilityParams.set('gpu', gpu);
+    if (ram) compatibilityParams.set('ram', ram);
+    if (motherboard) compatibilityParams.set('motherboard', motherboard);
+    if (psu) compatibilityParams.set('psu', psu);
+    if (pcCase) compatibilityParams.set('pcCase', pcCase);
+    if (storage) compatibilityParams.set('storage', storage);
+
+    const performanceParams = new URLSearchParams();
+    if (cpu) performanceParams.set('cpu', cpu);
+    if (gpu) performanceParams.set('gpu', gpu);
+    
+    return {
+      bottleneck: (cpu && gpu) ? `/bottleneck-calculator?cpu=${encodeURIComponent(cpu)}&gpu=${encodeURIComponent(gpu)}` : null,
+      compatibility: `/compatibility-checker?${compatibilityParams.toString()}`,
+      gaming: (cpu && gpu) ? `/gaming-estimator?cpu=${encodeURIComponent(cpu)}&gpu=${encodeURIComponent(gpu)}` : null,
+    };
+  }, [suggestion]);
 
   return (
     <div className="space-y-8">
@@ -146,63 +187,52 @@ export default function AiPcBuilderPage() {
                     ))}
                   </div>
                 </ScrollArea>
-                <Link href="/bottleneck-calculator" passHref>
-                  <Button variant="outline" className="w-full rounded-full mt-4 border-primary text-primary hover:bg-primary/10">
-                    <BarChart3 className="mr-2 h-4 w-4" /> Check for Bottlenecks
-                  </Button>
-                </Link>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4">
+                    {analysisLinks?.bottleneck && (
+                        <Link href={analysisLinks.bottleneck} passHref>
+                            <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
+                                <BarChart3 className="mr-2 h-4 w-4" /> Check Bottlenecks
+                            </Button>
+                        </Link>
+                    )}
+                     {analysisLinks?.compatibility && (
+                        <Link href={analysisLinks.compatibility} passHref>
+                            <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
+                                <ShieldCheck className="mr-2 h-4 w-4" /> Check Compatibility
+                            </Button>
+                        </Link>
+                    )}
+                     {analysisLinks?.gaming && (
+                        <Link href={analysisLinks.gaming} passHref>
+                            <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
+                                <Gamepad2 className="mr-2 h-4 w-4" /> Estimate Gaming FPS
+                            </Button>
+                        </Link>
+                    )}
+                </div>
               </div>
             )}
           </GlassCardContent>
         </GlassCard>
       </div>
-      
-      <GlassCard>
-        <GlassCardHeader>
-          <GlassCardTitle>Conversation Log</GlassCardTitle>
-        </GlassCardHeader>
-        <GlassCardContent>
-          <ScrollArea className="h-[200px] p-1 pr-3">
-            {conversationMessages.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No conversation yet for the PC builder.</p>
-            ) : (
-              <div className="space-y-3">
-                {conversationMessages.map((msg) => (
-                  <div 
-                    key={msg.id} 
-                    className={`text-sm p-3 rounded-lg max-w-[80%] ${
-                      msg.type === 'user' 
-                        ? 'bg-primary/10 text-primary ml-auto' 
-                        : msg.type === 'ai' 
-                          ? 'bg-accent/10 text-accent mr-auto' 
-                          : 'bg-muted/20 text-muted-foreground text-center text-xs italic'
-                    }`}
-                  >
-                    <strong className="font-semibold">{msg.type === 'user' ? 'You' : msg.type === 'ai' ? 'TechBuild AI' : 'System'}:</strong>
-                    {typeof msg.content === 'string' ? <p className="whitespace-pre-wrap">{msg.content}</p> : msg.content}
-                    {msg.data && msg.type === 'ai' && (
-                       <p className="mt-1 text-xs text-muted-foreground/80 italic">AI provided structured data (view in results panel).</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-        </GlassCardContent>
-      </GlassCard>
     </div>
   );
 }
 
 function ComponentCard({ component }: { component: PCComponent }) {
+    const componentTypeKey = component.type.toLowerCase().split(' ')[0];
+    const Icon = componentIcons[componentTypeKey] || Bot;
   return (
     <div className="p-4 rounded-lg border border-white/10 bg-card/50 hover:bg-card/80 transition-colors duration-200">
       <div className="flex justify-between items-start">
-        <div>
-          <h4 className="font-semibold text-primary">{component.name} <span className="text-xs text-muted-foreground">({component.type})</span></h4>
-          <p className="text-sm text-muted-foreground">{component.estimatedPerformance}</p>
+        <div className="flex items-center gap-3">
+            <Icon className="w-6 h-6 text-accent shrink-0" />
+            <div>
+                <h4 className="font-semibold text-primary">{component.name} <span className="text-xs text-muted-foreground">({component.type})</span></h4>
+                <p className="text-sm text-muted-foreground">{component.estimatedPerformance}</p>
+            </div>
         </div>
-        <p className="text-lg font-bold text-accent">₹{component.price.toFixed(2)}</p>
+        <p className="text-lg font-bold text-accent shrink-0 ml-2">₹{component.price.toFixed(2)}</p>
       </div>
       {component.link && (
         <a href={component.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block">
@@ -214,4 +244,3 @@ function ComponentCard({ component }: { component: PCComponent }) {
     </div>
   );
 }
-

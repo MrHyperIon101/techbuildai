@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import Link from 'next/link';
-import { ArrowRight, Bot, Cpu, Wrench, ShieldCheck, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain, ClipboardList, Users } from 'lucide-react';
+import { ArrowRight, Bot, Cpu, Wrench, ShieldCheck, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain, ClipboardList, Users, GitCompareArrows, Gamepad2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function HomePage() {
@@ -22,7 +22,7 @@ export default function HomePage() {
         </p>
       </header>
 
-      <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 max-w-7xl w-full animate-slide-in-up ">
+      <main className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 max-w-7xl w-full animate-slide-in-up ">
         <FeatureCard
           title="AI PC Builder"
           description="Get personalized PC component recommendations based on your budget and needs."
@@ -34,6 +34,18 @@ export default function HomePage() {
           description="Deep dive into any PC component. Get AI-powered details, specs, and analysis."
           icon={<Cpu className="w-8 h-8 text-accent" />}
           href="/components-db"
+        />
+        <FeatureCard
+          title="Compare Components"
+          description="Compare two CPUs or GPUs side-by-side with an AI-driven verdict."
+          icon={<GitCompareArrows className="w-8 h-8 text-accent" />}
+          href="/compare"
+        />
+        <FeatureCard
+          title="Gaming FPS Estimator"
+          description="Estimate your gaming performance with a specific CPU, GPU and game."
+          icon={<Gamepad2 className="w-8 h-8 text-accent" />}
+          href="/gaming-estimator"
         />
         <FeatureCard
           title="Bottleneck Calculator"
@@ -94,7 +106,6 @@ export default function HomePage() {
           description="New to PC building? Our comprehensive guide walks you through the entire process."
           icon={<Wrench className="w-8 h-8 text-accent" />}
           href="/build-guide"
-          className="sm:col-span-1" 
         />
       </main>
 
@@ -142,5 +153,3 @@ function FeatureCard({ title, description, icon, href, className }: FeatureCardP
     </Link>
   );
 }
-
-    

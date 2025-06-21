@@ -18,6 +18,10 @@ import { useConversation } from '@/contexts/conversation-context';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart3, Cpu, Info, ArrowUpDown, ListChecks } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import type { ChartConfig } from '@/components/ui/chart';
+
 
 const searchSchema = z.object({
   cpuName: z.string().max(100, "CPU name is too long.").optional(),
@@ -26,6 +30,44 @@ type SearchFormValues = z.infer<typeof searchSchema>;
 
 type SortKey = keyof Omit<CinebenchScoreEntry, 'notes'> | ''; // Exclude 'notes'
 type SortOrder = 'asc' | 'desc';
+
+function TopCpuChart({ scores }: { scores: CinebenchScoreEntry[] }) {
+    const chartData = useMemo(() => {
+        return scores
+            .filter(s => s.r23MultiCoreScore > 0)
+            .sort((a, b) => b.r23MultiCoreScore - a.r23MultiCoreScore)
+            .slice(0, 10) // Show top 10 for clarity
+            .map(s => ({ ...s, shortName: s.cpuName.replace(/Intel Core |AMD Ryzen /g, '') }));
+    }, [scores]);
+
+    if (chartData.length === 0) return null;
+
+    const chartConfig = {
+        r23MultiCoreScore: {
+            label: "R23 Multi-Core",
+            color: "hsl(var(--accent))",
+        },
+        r23SingleCoreScore: {
+            label: "R23 Single-Core",
+            color: "hsl(var(--primary))",
+        }
+    } satisfies ChartConfig;
+
+    return (
+        <div className="mb-8">
+            <h3 className="text-xl font-semibold text-center mb-4 text-primary">Top CPUs: Cinebench R23 Multi-Core Score</h3>
+            <ChartContainer config={chartConfig} className="w-full h-[300px] md:h-[400px]">
+                <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20, top: 5, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" dataKey="r23MultiCoreScore" />
+                    <YAxis dataKey="shortName" type="category" width={100} tick={{ fontSize: 12 }} interval={0} />
+                    <ChartTooltip cursor={{fill: 'hsla(var(--muted))'}} content={<ChartTooltipContent />} />
+                    <Bar dataKey="r23MultiCoreScore" fill="var(--color-r23MultiCoreScore)" radius={4} />
+                </BarChart>
+            </ChartContainer>
+        </div>
+    );
+}
 
 function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'r23MultiCoreScore' }: { scores: CinebenchScoreEntry[], dataSourceNotes?: string, initialSortKey?: SortKey }) {
   const [sortKey, setSortKey] = useState<SortKey>(initialSortKey);
@@ -225,7 +267,10 @@ export default function CinebenchScoresPage() {
             </div>
           )}
           {!isLoadingTopCpus && topCpuScoresOutput && (
-            <SortableScoreTable scores={topCpuScoresOutput.scores} dataSourceNotes={topCpuScoresOutput.dataSourceNotes} initialSortKey="r23MultiCoreScore" />
+            <>
+              <TopCpuChart scores={topCpuScoresOutput.scores} />
+              <SortableScoreTable scores={topCpuScoresOutput.scores} dataSourceNotes={topCpuScoresOutput.dataSourceNotes} initialSortKey="r23MultiCoreScore" />
+            </>
           )}
         </GlassCardContent>
       </GlassCard>
@@ -315,4 +360,3 @@ export default function CinebenchScoresPage() {
     </div>
   );
 }
-

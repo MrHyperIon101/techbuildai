@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,11 +14,12 @@ import { SectionTitle } from '@/components/common/section-title';
 import { LoadingSpinner } from '@/components/common/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
 import { handleCheckCompatibility } from '@/lib/actions';
-import type { CompatibilityInput, CompatibilityReport, CompatibilityIssue } from '@/lib/types';
+import type { CompatibilityReport, CompatibilityIssue } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
 import { ShieldCheck, AlertTriangle, CheckCircle, Puzzle, Info, MessageSquareWarning } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useSearchParams } from 'next/navigation';
 
 const compatibilityFormSchema = z.object({
   cpu: z.string().min(5, "CPU model must be at least 5 characters.").max(100),
@@ -37,6 +38,7 @@ export default function CompatibilityCheckerPage() {
   const [report, setReport] = useState<CompatibilityReport | null>(null);
   const { toast } = useToast();
   const { addMessage } = useConversation();
+  const searchParams = useSearchParams();
 
   const form = useForm<CompatibilityFormValues>({
     resolver: zodResolver(compatibilityFormSchema),
@@ -50,6 +52,24 @@ export default function CompatibilityCheckerPage() {
       storage: '',
     },
   });
+
+  useEffect(() => {
+    // This effect runs once on mount to populate the form from URL params
+    const fields: (keyof CompatibilityFormValues)[] = ['cpu', 'gpu', 'ram', 'motherboard', 'psu', 'pcCase', 'storage'];
+    let formUpdated = false;
+    fields.forEach(field => {
+      if (searchParams.has(field)) {
+        form.setValue(field, searchParams.get(field) || '');
+        formUpdated = true;
+      }
+    });
+
+    if (formUpdated) {
+        // Automatically submit the form if it was populated from URL
+        form.handleSubmit(onSubmit)();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   const onSubmit: SubmitHandler<CompatibilityFormValues> = async (data) => {
     setIsLoading(true);
@@ -251,4 +271,3 @@ function IssueCard({ issue }: IssueCardProps) {
     </div>
   );
 }
-

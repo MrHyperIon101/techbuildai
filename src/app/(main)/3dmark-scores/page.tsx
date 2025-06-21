@@ -18,6 +18,9 @@ import { useConversation } from '@/contexts/conversation-context';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChartHorizontalBig, Layers, Info, ArrowUpDown, ListChecks } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import type { ChartConfig } from '@/components/ui/chart';
 
 const searchSchema = z.object({
   gpuName: z.string().max(100, "GPU name is too long.").optional(),
@@ -26,6 +29,41 @@ type SearchFormValues = z.infer<typeof searchSchema>;
 
 type SortKeyGpu = keyof Gpu3dMarkScoreEntry | '';
 type SortOrderGpu = 'asc' | 'desc';
+
+function TopGpuChart({ scores }: { scores: Gpu3dMarkScoreEntry[] }) {
+    const timeSpyScores = useMemo(() => {
+        return scores
+            .filter(s => s.benchmarkName === "Time Spy Graphics" && s.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 10) // Show top 10 for clarity
+            .map(s => ({ ...s, shortName: s.gpuName.replace(/NVIDIA|AMD|GeForce|Radeon/g, '').trim() }));
+    }, [scores]);
+
+    if (timeSpyScores.length === 0) return null;
+
+    const chartConfig = {
+        score: {
+            label: "Time Spy Score",
+            color: "hsl(var(--accent))",
+        },
+    } satisfies ChartConfig;
+
+    return (
+        <div className="mb-8">
+             <h3 className="text-xl font-semibold text-center mb-4 text-primary">Top GPUs: Time Spy Graphics Score</h3>
+            <ChartContainer config={chartConfig} className="w-full h-[300px] md:h-[400px]">
+                <BarChart data={timeSpyScores} layout="vertical" margin={{ left: 20, right: 20, top: 5, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" dataKey="score" />
+                    <YAxis dataKey="shortName" type="category" width={120} tick={{ fontSize: 12 }} interval={0} />
+                    <ChartTooltip cursor={{fill: 'hsla(var(--muted))'}} content={<ChartTooltipContent />} />
+                    <Bar dataKey="score" fill="var(--color-score)" radius={4} />
+                </BarChart>
+            </ChartContainer>
+        </div>
+    );
+}
+
 
 function SortableGpuScoreTable({ scores, dataSourceNotes, initialSortKey = 'score' }: { scores: Gpu3dMarkScoreEntry[], dataSourceNotes?: string, initialSortKey?: SortKeyGpu }) {
   const [sortKey, setSortKey] = useState<SortKeyGpu>(initialSortKey);
@@ -215,7 +253,10 @@ export default function ThreeDMarkScoresPage() {
             </div>
           )}
           {!isLoadingTopGpus && topGpuScoresOutput && (
-            <SortableGpuScoreTable scores={topGpuScoresOutput.scores} dataSourceNotes={topGpuScoresOutput.dataSourceNotes} />
+            <>
+              <TopGpuChart scores={topGpuScoresOutput.scores} />
+              <SortableGpuScoreTable scores={topGpuScoresOutput.scores} dataSourceNotes={topGpuScoresOutput.dataSourceNotes} />
+            </>
           )}
         </GlassCardContent>
       </GlassCard>

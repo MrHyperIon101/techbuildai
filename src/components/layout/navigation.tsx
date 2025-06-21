@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import {
   Home, Cpu, Search as AnalysisIcon, BookOpen, History, Bot, ShieldCheck,
   BarChart3, BarChartHorizontalBig, Flame, Gauge, Brain, ClipboardList, Users,
-  ChevronUp
+  ChevronUp, GitCompareArrows, Gamepad2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -21,13 +21,15 @@ const primaryNavItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/builder', label: 'AI Builder', icon: Bot },
   { href: '/components-db', label: 'Components', icon: Cpu },
-  { href: '/bottleneck-calculator', label: 'Bottleneck', icon: AnalysisIcon },
-  { href: '/compatibility-checker', label: 'Compat. Check', icon: ShieldCheck },
+  { href: '/compare', label: 'Compare', icon: GitCompareArrows },
   { href: '/history', label: 'History', icon: History },
 ];
 
 const moreNavItems = [
-  { href: '/build-guide', label: 'Guide', icon: BookOpen },
+  { href: '/gaming-estimator', label: 'FPS Estimator', icon: Gamepad2 },
+  { href: '/bottleneck-calculator', label: 'Bottleneck', icon: AnalysisIcon },
+  { href: '/compatibility-checker', label: 'Compat. Check', icon: ShieldCheck },
+  { href: '/build-guide', label: 'Build Guide', icon: BookOpen },
   { href: '/cinebench-scores', label: 'Cinebench', icon: BarChart3 },
   { href: '/3dmark-scores', label: '3DMark', icon: BarChartHorizontalBig },
   { href: '/furmark-scores', label: 'FurMark', icon: Flame },
@@ -37,13 +39,20 @@ const moreNavItems = [
   { href: '/userbenchmark-scores', label: 'UserBench', icon: Users },
 ];
 
-// Base classes for consistent styling of all nav items (links and the "More" trigger button)
 const navItemBaseClasses = cn(
   'flex flex-col items-center justify-center rounded-full transition-all duration-300 ease-in-out hover:bg-primary/20 shrink-0',
-  'p-1 w-12 h-12', // Default (XS Mobile / Icon Only): 48px x 48px
-  'sm:w-14 sm:h-14', // SM Mobile (Icon + Text Below): 56px x 56px
-  'md:w-auto md:h-12 md:flex-row md:px-3 md:py-1.5' // Desktop layout adjustments (h-12 = 48px height)
+  'p-1 w-12 h-12', // Default (XS Mobile / Icon Only)
+  'sm:p-1.5 sm:w-14 sm:h-14', // SM Mobile (Icon + Text Below)
+  'md:w-auto md:h-12 md:flex-row md:px-3 md:py-1.5' // Desktop layout adjustments
 );
+
+const navLabelBaseClasses = cn(
+  'hidden', // Hidden by default on smallest screens
+  'sm:block sm:text-[9px] sm:mt-[1px] sm:leading-3', // Visible and styled for sm+
+  'md:mt-0 md:text-xs md:ml-1.5', // Desktop overrides
+  "font-medium whitespace-nowrap" // Common styles
+);
+
 
 const NavLink = ({ href, label, icon: Icon, isActive }: { href: string, label: string, icon: React.ElementType, isActive: boolean }) => {
   return (
@@ -56,11 +65,7 @@ const NavLink = ({ href, label, icon: Icon, isActive }: { href: string, label: s
       aria-current={isActive ? 'page' : undefined}
     >
       <Icon className="w-5 h-5 shrink-0 md:w-4" />
-      <span className={cn(
-        "hidden sm:block sm:text-[9px] sm:mt-[1px] sm:leading-3", // Hidden by default, visible and styled for sm+
-        "md:mt-0 md:text-xs md:ml-1.5", // Desktop overrides
-        "font-medium whitespace-nowrap" // Common styles
-      )}>{label}</span>
+      <span className={navLabelBaseClasses}>{label}</span>
     </Link>
   );
 };
@@ -112,11 +117,7 @@ export function Navigation() {
                 )}
               >
                 <ChevronUp className="w-5 h-5 shrink-0 md:w-4" />
-                <span className={cn(
-                  "hidden sm:block sm:text-[9px] sm:mt-[1px] sm:leading-3", // Hidden by default, visible and styled for sm+
-                  "md:mt-0 md:text-xs md:ml-1.5", // Desktop overrides
-                  "font-medium whitespace-nowrap" // Common styles
-                )}>More</span>
+                <span className={navLabelBaseClasses}>More</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top" className="mb-2 w-56 bg-card/90 backdrop-blur-md border-primary/30">

@@ -1,5 +1,4 @@
 
-
 export interface Message {
   id: string;
   type: 'user' | 'ai' | 'system';
@@ -21,7 +20,9 @@ export type FeatureArea =
   | 'pcmark-scores'
   | 'geekbench-scores'
   | 'aida64-scores'
-  | 'userbenchmark-scores';
+  | 'userbenchmark-scores'
+  | 'compare-components'
+  | 'gaming-estimator';
 
 export interface PCComponent {
   name: string;
@@ -88,6 +89,8 @@ export interface BuildGuideStep {
   description: string;
   icon: React.ElementType;
   details?: string[];
+  imageUrl: string;
+  imageHint: string;
 }
 
 export interface CompatibilityInput {
@@ -220,4 +223,40 @@ export interface UserBenchmarkScoresOutput {
   scores: UserBenchmarkScoreEntry[];
   dataSourceNotes?: string;
 }
-    
+
+export interface CompareComponentsInput {
+    componentA: string;
+    componentB: string;
+    componentType: 'CPU' | 'GPU';
+}
+  
+export interface ComparisonPoint {
+    metric: string;
+    valueA: string;
+    valueB: string;
+    verdict: string;
+}
+  
+export interface CompareComponentsOutput {
+    winner: 'Component A' | 'Component B' | 'It depends' | 'Inconclusive';
+    summary: string;
+    comparisonPoints: ComparisonPoint[];
+}
+
+export interface EstimateGamingPerformanceInput {
+    cpu: string;
+    gpu: string;
+    gameName: string;
+}
+
+export interface PerformanceAtResolution {
+    resolution: '1080p' | '1440p' | '4K';
+    estimatedFps: string;
+    settings: string;
+    commentary: string;
+}
+
+export interface GamingPerformanceOutput {
+    performance: PerformanceAtResolution[];
+    overallAssessment: string;
+}
