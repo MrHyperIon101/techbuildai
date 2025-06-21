@@ -20,11 +20,14 @@ import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, Memory
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const builderFormSchema = z.object({
   budget: z.coerce.number().min(8000, "Budget must be at least ₹8,000").max(8000000, "Budget cannot exceed ₹8,000,000"),
   desiredUsage: z.string().min(10, "Please describe your needs in at least 10 characters.").max(500, "Description is too long."),
   includePeripherals: z.boolean().default(false),
+  chassisSize: z.enum(['Any', 'SFF', 'Mini-Tower', 'Mid-Tower', 'Full-Tower']).default('Any'),
+  buildTheme: z.string().max(100, "Theme description is too long.").optional(),
 });
 
 type BuilderFormValues = z.infer<typeof builderFormSchema>;
@@ -54,13 +57,16 @@ export default function AiPcBuilderPage() {
       budget: 80000,
       desiredUsage: 'Gaming at 1440p and some light video editing.',
       includePeripherals: false,
+      chassisSize: 'Any',
+      buildTheme: '',
     },
   });
 
   const onSubmit: SubmitHandler<BuilderFormValues> = async (data) => {
     setIsLoading(true);
     setSuggestion(null);
-    addMessage({ type: 'user', feature: 'builder', content: `Budget: ₹${data.budget}, Usage: ${data.desiredUsage}, Peripherals: ${data.includePeripherals}` });
+    const userMessage = `Budget: ₹${data.budget}, Usage: ${data.desiredUsage}, Peripherals: ${data.includePeripherals}, Size: ${data.chassisSize}, Theme: ${data.buildTheme || 'None'}`;
+    addMessage({ type: 'user', feature: 'builder', content: userMessage });
     try {
       const result = await handleSuggestPcBuild(data);
       setSuggestion(result);
@@ -151,6 +157,47 @@ export default function AiPcBuilderPage() {
                     </FormItem>
                   )}
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="chassisSize"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chassis Size</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-background/50 rounded-full px-4">
+                              <SelectValue placeholder="Select a case size" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Any">Any Size</SelectItem>
+                            <SelectItem value="SFF">Small Form Factor (SFF)</SelectItem>
+                            <SelectItem value="Mini-Tower">Mini-Tower</SelectItem>
+                            <SelectItem value="Mid-Tower">Mid-Tower</SelectItem>
+                            <SelectItem value="Full-Tower">Full-Tower</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                      control={form.control}
+                      name="buildTheme"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Build Theme</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., All White, Black RGB" {...field} className="bg-background/50 rounded-full px-4" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </div>
+                
                 <FormField
                   control={form.control}
                   name="includePeripherals"

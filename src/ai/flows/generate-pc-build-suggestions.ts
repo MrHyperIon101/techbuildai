@@ -15,6 +15,8 @@ const SuggestPcBuildInputSchema = z.object({
   budget: z.number().describe('The budget for the PC build in INR.'),
   desiredUsage: z.string().describe('The desired usage of the PC (e.g., gaming, video editing).'),
   includePeripherals: z.boolean().optional().describe('Whether to include peripherals like monitor, keyboard, and mouse in the budget.'),
+  chassisSize: z.enum(['Any', 'SFF', 'Mini-Tower', 'Mid-Tower', 'Full-Tower']).optional().describe('The desired case/chassis size for the build. SFF stands for Small Form Factor.'),
+  buildTheme: z.string().optional().describe('A desired aesthetic theme for the build (e.g., "all white", "black with RGB", "wood accent", "minimalist no RGB").'),
 });
 export type SuggestPcBuildInput = z.infer<typeof SuggestPcBuildInputSchema>;
 
@@ -46,6 +48,14 @@ const prompt = ai.definePrompt({
   output: {schema: SuggestPcBuildOutputSchema},
   prompt: `You are an expert PC builder. A user wants to build a PC with a budget of {{budget}} INR for {{desiredUsage}}.
   {{#if includePeripherals}}The user wants to include peripherals (monitor, keyboard, mouse) within this budget.{{/if}}
+
+  The user has also specified the following preferences, which you must follow:
+  {{#if chassisSize}}
+  - Desired Chassis Size: {{chassisSize}}. You must select a PC Case that fits this size requirement (e.g., ATX Mid-Tower, mITX for SFF). This will also constrain your motherboard choice (e.g., an ITX or Micro-ATX motherboard for SFF builds).
+  {{/if}}
+  {{#if buildTheme}}
+  - Desired Build Theme: "{{buildTheme}}". You should prioritize components that match this aesthetic. For example, for an "all white" build, you must choose a white case, a motherboard with white or silver accents, and white RAM modules.
+  {{/if}}
 
   Your task is to suggest a complete and compatible set of PC components. You MUST suggest exactly one of each of the following core components:
   - CPU
