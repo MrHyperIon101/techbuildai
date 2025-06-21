@@ -11,7 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const EstimateGamingPerformanceInputSchema = z.object({
+const EstimateGamingPerformanceInputSchema = z.object({
   cpu: z.string().min(3).describe('The CPU model.'),
   gpu: z.string().min(3).describe('The GPU model.'),
   gameName: z.string().min(2).describe('The name of the game.'),
@@ -25,14 +25,14 @@ const PerformanceAtResolutionSchema = z.object({
     commentary: z.string().describe("Brief commentary on the performance at this resolution, noting any potential bottlenecks or specific considerations (e.g., 'GPU will be fully utilized', 'CPU may limit performance in intense scenes').")
 });
 
-export const EstimateGamingPerformanceOutputSchema = z.object({
+const EstimateGamingPerformanceOutputSchema = z.object({
   performance: z.array(PerformanceAtResolutionSchema).describe("An array of performance estimates for 1080p, 1440p, and 4K resolutions."),
   overallAssessment: z.string().describe("A summary of the expected gaming experience with this hardware combination for the specified game."),
 });
 export type EstimateGamingPerformanceOutput = z.infer<typeof EstimateGamingPerformanceOutputSchema>;
 
 
-export async function estimateGamingPerformance(input: EstimateGamingPerformanceInput): Promise<EstimateGamingPerformanceOutput> {
+export async function estimateGamingPerformance(input: EstimateGamingPerformanceInput): Promise<GamingPerformanceOutput> {
   return estimateGamingPerformanceFlow(input);
 }
 
