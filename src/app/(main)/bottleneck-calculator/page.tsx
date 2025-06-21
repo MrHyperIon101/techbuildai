@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,6 +18,7 @@ import { useConversation } from '@/contexts/conversation-context';
 import { Zap, AlertTriangle, Cpu, MonitorPlay, TrendingUp, Gamepad2, Briefcase, Layers, Lightbulb } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { useSearchParams } from 'next/navigation';
 
 const bottleneckFormSchema = z.object({
   cpu: z.string().min(3, "CPU model must be at least 3 characters.").max(100, "CPU model name is too long."),
@@ -31,6 +32,7 @@ export default function BottleneckCalculatorPage() {
   const [bottleneck, setBottleneck] = useState<BottleneckInfo | null>(null);
   const { toast } = useToast();
   const { addMessage } = useConversation();
+  const searchParams = useSearchParams();
 
   const form = useForm<BottleneckFormValues>({
     resolver: zodResolver(bottleneckFormSchema),
@@ -39,6 +41,18 @@ export default function BottleneckCalculatorPage() {
       gpu: '',
     },
   });
+
+  useEffect(() => {
+    const cpu = searchParams.get('cpu');
+    const gpu = searchParams.get('gpu');
+    if (cpu) {
+      form.setValue('cpu', cpu);
+    }
+    if (gpu) {
+      form.setValue('gpu', gpu);
+    }
+  }, [searchParams, form]);
+
 
   const onSubmit: SubmitHandler<BottleneckFormValues> = async (data) => {
     setIsLoading(true);
