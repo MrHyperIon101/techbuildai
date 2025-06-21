@@ -20,18 +20,18 @@ const SuggestPcBuildInputSchema = z.object({
 });
 export type SuggestPcBuildInput = z.infer<typeof SuggestPcBuildInputSchema>;
 
-const ComponentTypeEnum = z.enum(['CPU', 'GPU', 'RAM', 'Motherboard', 'Storage', 'PSU', 'Case', 'CPU Cooler', 'Thermal Paste', 'Monitor', 'Keyboard', 'Mouse']);
+const ComponentTypeEnum = z.enum(['CPU', 'GPU', 'RAM', 'Motherboard', 'Storage', 'PSU', 'Case', 'CPU Cooler', 'Thermal Paste', 'Monitor', 'Keyboard', 'Mouse', 'Custom Cables']);
 
 const SuggestPcBuildOutputSchema = z.object({
   components: z.array(
     z.object({
       name: z.string().describe('The name of the component.'),
-      type: ComponentTypeEnum.describe("The type of component. Must be one of: CPU, GPU, RAM, Motherboard, Storage, PSU, Case, CPU Cooler, Thermal Paste, and if requested, Monitor, Keyboard, Mouse."),
+      type: ComponentTypeEnum.describe("The type of component. Must be one of: CPU, GPU, RAM, Motherboard, Storage, PSU, Case, CPU Cooler, Thermal Paste, Custom Cables, and if requested, Monitor, Keyboard, Mouse."),
       price: z.number().describe('The price of the component in INR.'),
       estimatedPerformance: z.string().describe('Estimated performance of the component for the given usage.'),
       link: z.string().describe('Link to buy the component from amazon.in or flipkart.com')
     })
-  ).describe('A list of suggested PC components. This list MUST include one of each of the core component types (CPU, GPU, RAM, Motherboard, Storage, PSU, Case, CPU Cooler, Thermal Paste). If peripherals are requested, it MUST also include one of each (Monitor, Keyboard, Mouse).'),
+  ).describe('A list of suggested PC components. This list MUST include one of each of the core component types (CPU, GPU, RAM, Motherboard, Storage, PSU, Case, CPU Cooler, Thermal Paste). If peripherals are requested, it MUST also include one of each (Monitor, Keyboard, Mouse). Custom Cables are optional.'),
   estimatedTotalCost: z.number().describe('The estimated total cost of the PC build in INR.'),
   overallPerformance: z.string().describe('Overall performance of the build for the specified usage.'),
   buildExplanation: z.string().describe('Explanation of why these components were chosen.')
@@ -54,7 +54,9 @@ const prompt = ai.definePrompt({
   - Desired Chassis Size: {{chassisSize}}. You must select a PC Case that fits this size requirement (e.g., ATX Mid-Tower, mITX for SFF). This will also constrain your motherboard choice (e.g., an ITX or Micro-ATX motherboard for SFF builds).
   {{/if}}
   {{#if buildTheme}}
-  - Desired Build Theme: "{{buildTheme}}". You should prioritize components that match this aesthetic. For example, for an "all white" build, you must choose a white case, a motherboard with white or silver accents, and white RAM modules.
+  - Desired Build Theme: "{{buildTheme}}".
+  - If the budget is high (e.g., greater than 150000 INR), you MUST prioritize components that match this aesthetic. For example, for an "all white" build, you must choose a white case, a motherboard with white or silver accents, and white RAM modules. For these high-budget themed builds, you should also suggest 'Custom Cables' from a brand like CableMod to complete the look.
+  - If the budget is not high, you should still try to adhere to the theme if possible without significantly compromising performance for the cost (e.g., picking a black case for a 'black with RGB' theme is easy), but do not include expensive aesthetic items like custom cables.
   {{/if}}
 
   Your task is to suggest a complete and compatible set of PC components. You MUST suggest exactly one of each of the following core components:
@@ -72,6 +74,9 @@ const prompt = ai.definePrompt({
   - If the CPU model comes with a decent in-box cooler (e.g., AMD Wraith series for non-X models, Intel non-K SKUs) AND the total budget is under 100000 INR, you should list the CPU Cooler as "In-box CPU Cooler" with a price of 0. In this case, you MUST list the Thermal Paste as "Pre-applied on in-box cooler" with a price of 0.
   - If the CPU model does not come with a cooler (e.g., AMD 'X' series Ryzen 5 and above, Intel 'K' series) OR if the budget is over 100000 INR, you MUST suggest a suitable after-market air or liquid cooler (e.g., "Deepcool AK400", "Noctua NH-D15"). In this case, for Thermal Paste, you should suggest a high-performance option like "Honeywell PTM7950 pad" or "Arctic MX-4" and provide its price.
 
+  For Custom Cables:
+  - Only include a component with the type 'Custom Cables' if the budget is high (over 150000 INR) and a specific build theme has been requested. Otherwise, omit this component.
+
   {{#if includePeripherals}}
   You MUST also suggest one of each of the following peripherals, ensuring their cost is accounted for within the total budget:
   - Monitor
@@ -81,7 +86,7 @@ const prompt = ai.definePrompt({
 
   For each component and peripheral, provide:
   - The specific model name.
-  - The component type (must be one of 'CPU', 'Motherboard', 'RAM', 'GPU', 'Storage', 'PSU', 'Case', 'CPU Cooler', 'Thermal Paste'{{#if includePeripherals}}, 'Monitor', 'Keyboard', 'Mouse'{{/if}}).
+  - The component type (must be one of 'CPU', 'Motherboard', 'RAM', 'GPU', 'Storage', 'PSU', 'Case', 'CPU Cooler', 'Thermal Paste', 'Custom Cables'{{#if includePeripherals}}, 'Monitor', 'Keyboard', 'Mouse'{{/if}}).
   - An estimated price in INR.
   - A brief description of its estimated performance.
   - A shopping link, preferably from amazon.in or flipkart.com.
@@ -90,7 +95,7 @@ const prompt = ai.definePrompt({
   Ensure the components are compatible with each other. For example, the CPU socket must match the motherboard socket, and the motherboard and case form factors must be compatible.
 
   Prioritize components available on Indian e-commerce sites.
-  The 'components' list MUST include all required core components. If 'includePeripherals' is true, it MUST also include one of each peripheral.
+  The 'components' list MUST include all required core components. If 'includePeripherals' is true, it MUST also include one of each peripheral. The 'Custom Cables' component is optional and should only be included based on the rules above.
   Respond with a JSON object that strictly follows the output schema.
   `,
 });

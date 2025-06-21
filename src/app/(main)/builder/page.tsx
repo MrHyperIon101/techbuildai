@@ -12,16 +12,18 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/
 import { SectionTitle } from '@/components/common/section-title';
 import { LoadingSpinner } from '@/components/common/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
-import { handleSuggestPcBuild } from '@/lib/actions';
-import type { BuildSuggestion, PCComponent } from '@/lib/types';
+import { handleSuggestPcBuild, handleCalculateBottleneck, handleCheckCompatibility, handleEstimateGamingPerformance } from '@/lib/actions';
+import type { BuildSuggestion, PCComponent, BottleneckInfo, CompatibilityReport, GamingPerformanceOutput, CompatibilityIssue } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
-import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, MemoryStick, HardDrive, Power, HardDriveDownload, Monitor, Keyboard, Mouse, TestTube2, Wind, Layers } from 'lucide-react';
+import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, MemoryStick, HardDrive, Power, HardDriveDownload, Monitor, Keyboard, Mouse, TestTube2, Wind, Layers, Network, AlertTriangle, CheckCircle, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { BenchmarkResults } from '@/components/common/benchmark-results';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 const builderFormSchema = z.object({
   budget: z.coerce.number().min(8000, "Budget must be at least ₹8,000").max(8000000, "Budget cannot exceed ₹8,000,000"),
@@ -38,11 +40,12 @@ const componentIcons: { [key: string]: React.ElementType } = {
   gpu: Video,
   ram: MemoryStick,
   storage: HardDrive,
-  motherboard: HardDriveDownload, 
+  motherboard: HardDriveDownload,
   psu: Power,
   case: (props) => <div {...props} className="w-5 h-5 border-2 rounded-sm border-current" />,
   'cpu cooler': Wind,
   'thermal paste': Layers,
+  'custom cables': Network,
   monitor: Monitor,
   keyboard: Keyboard,
   mouse: Mouse,
@@ -54,6 +57,11 @@ export default function AiPcBuilderPage() {
   const [isBenchmarkDialogOpen, setIsBenchmarkDialogOpen] = useState(false);
   const { toast } = useToast();
   const { addMessage } = useConversation();
+
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [bottleneckReport, setBottleneckReport] = useState<BottleneckInfo | null>(null);
+  const [compatibilityReport, setCompatibilityReport] = useState<CompatibilityReport | null>(null);
+  const [gamingReport, setGamingReport] = useState<GamingPerformanceOutput | null>(null);
 
   const form = useForm<BuilderFormValues>({
     resolver: zodResolver(builderFormSchema),
@@ -69,17 +77,53 @@ export default function AiPcBuilderPage() {
   const onSubmit: SubmitHandler<BuilderFormValues> = async (data) => {
     setIsLoading(true);
     setSuggestion(null);
+    setAnalysisLoading(false);
+    setBottleneckReport(null);
+    setCompatibilityReport(null);
+    setGamingReport(null);
+
     const userMessage = `Budget: ₹${data.budget}, Usage: ${data.desiredUsage}, Peripherals: ${data.includePeripherals}, Size: ${data.chassisSize}, Theme: ${data.buildTheme || 'None'}`;
     addMessage({ type: 'user', feature: 'builder', content: userMessage });
+
     try {
       const result = await handleSuggestPcBuild(data);
       setSuggestion(result);
       addMessage({ type: 'ai', feature: 'builder', content: 'Here is your PC build suggestion:', data: result });
       toast({
         title: "Build Suggestion Ready!",
-        description: "We've generated a PC build based on your criteria.",
+        description: "Now analyzing the build's performance and compatibility...",
         variant: "default",
       });
+
+      setAnalysisLoading(true);
+      const cpu = result.components.find(c => c.type === 'CPU')?.name;
+      const gpu = result.components.find(c => c.type === 'GPU')?.name;
+      const ram = result.components.find(c => c.type === 'RAM')?.name;
+      const motherboard = result.components.find(c => c.type === 'Motherboard')?.name;
+      const psu = result.components.find(c => c.type === 'PSU')?.name;
+      const pcCase = result.components.find(c => c.type === 'Case')?.name;
+      const storage = result.components.find(c => c.type === 'Storage')?.name;
+
+      const analysisPromises: Promise<any>[] = [];
+
+      if (cpu && gpu) {
+        analysisPromises.push(handleCalculateBottleneck({ cpu, gpu }));
+      }
+      if (cpu && motherboard && ram && psu && pcCase) {
+        analysisPromises.push(handleCheckCompatibility({ cpu, motherboard, ram, gpu, psu, pcCase, storage }));
+      }
+      if (cpu && gpu) {
+        analysisPromises.push(handleEstimateGamingPerformance({ cpu, gpu, gameName: 'Cyberpunk 2077' }));
+      }
+      
+      const [bottleneckResult, compatibilityResult, gamingResult] = await Promise.allSettled(analysisPromises);
+      
+      if (bottleneckResult.status === 'fulfilled') setBottleneckReport(bottleneckResult.value);
+      if (compatibilityResult.status === 'fulfilled') setCompatibilityReport(compatibilityResult.value);
+      if (gamingResult.status === 'fulfilled') setGamingReport(gamingResult.value);
+
+      setAnalysisLoading(false);
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       toast({
@@ -88,6 +132,7 @@ export default function AiPcBuilderPage() {
         variant: "destructive",
       });
       addMessage({ type: 'system', feature: 'builder', content: `Error: ${errorMessage}` });
+      setAnalysisLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -95,36 +140,11 @@ export default function AiPcBuilderPage() {
 
   const analysisLinks = useMemo(() => {
     if (!suggestion) return null;
-
     const cpu = suggestion.components.find(c => c.type.toLowerCase() === 'cpu')?.name;
     const gpu = suggestion.components.find(c => c.type.toLowerCase() === 'gpu')?.name;
-    const ram = suggestion.components.find(c => c.type.toLowerCase() === 'ram')?.name;
-    const motherboard = suggestion.components.find(c => c.type.toLowerCase() === 'motherboard')?.name;
-    const psu = suggestion.components.find(c => c.type.toLowerCase() === 'psu')?.name;
-    const pcCase = suggestion.components.find(c => c.type.toLowerCase() === 'case')?.name;
-    const storage = suggestion.components.find(c => c.type.toLowerCase() === 'storage')?.name;
-    
-    const compatibilityParams = new URLSearchParams();
-    if (cpu) compatibilityParams.set('cpu', cpu);
-    if (gpu) compatibilityParams.set('gpu', gpu);
-    if (ram) compatibilityParams.set('ram', ram);
-    if (motherboard) compatibilityParams.set('motherboard', motherboard);
-    if (psu) compatibilityParams.set('psu', psu);
-    if (pcCase) compatibilityParams.set('pcCase', pcCase);
-    if (storage) compatibilityParams.set('storage', storage);
-
-    const performanceParams = new URLSearchParams();
-    if (cpu) performanceParams.set('cpu', cpu);
-    if (gpu) performanceParams.set('gpu', gpu);
-    
-    return {
-      bottleneck: (cpu && gpu) ? `/bottleneck-calculator?cpu=${encodeURIComponent(cpu)}&gpu=${encodeURIComponent(gpu)}` : null,
-      compatibility: `/compatibility-checker?${compatibilityParams.toString()}`,
-      gaming: (cpu && gpu) ? `/gaming-estimator?cpu=${encodeURIComponent(cpu)}&gpu=${encodeURIComponent(gpu)}` : null,
-      cpu,
-      gpu,
-    };
+    return { cpu, gpu };
   }, [suggestion]);
+
 
   return (
     <div className="space-y-8">
@@ -252,7 +272,7 @@ export default function AiPcBuilderPage() {
                 <p className="text-sm text-muted-foreground/70 mt-2">Fill out the form and click "Generate Build".</p>
               </div>
             )}
-            {suggestion && analysisLinks && (
+            {suggestion && (
               <div className="space-y-6 animate-fade-in">
                 <div>
                   <h3 className="text-xl font-semibold text-accent mb-1">Overall Performance: {suggestion.overallPerformance}</h3>
@@ -267,49 +287,37 @@ export default function AiPcBuilderPage() {
                   </div>
                 </ScrollArea>
                 
-                <div className="mt-4 space-y-3">
-                    <div>
-                        <h4 className="text-lg font-semibold text-primary mb-2">Build Analysis</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                           <Dialog open={isBenchmarkDialogOpen} onOpenChange={setIsBenchmarkDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                        <TestTube2 className="mr-2 h-4 w-4" /> Show Benchmarks
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-4xl">
-                                    <DialogHeader>
-                                        <DialogTitle>Benchmark Scores for {analysisLinks.cpu} & {analysisLinks.gpu}</DialogTitle>
-                                    </DialogHeader>
-                                    {isBenchmarkDialogOpen && analysisLinks.cpu && analysisLinks.gpu && (
-                                        <BenchmarkResults cpuName={analysisLinks.cpu} gpuName={analysisLinks.gpu} />
-                                    )}
-                                </DialogContent>
-                            </Dialog>
-
-                            {analysisLinks?.bottleneck && (
-                                <Link href={analysisLinks.bottleneck} passHref>
-                                    <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                        <BarChart3 className="mr-2 h-4 w-4" /> Bottleneck
-                                    </Button>
-                                </Link>
-                            )}
-                             {analysisLinks?.compatibility && (
-                                <Link href={analysisLinks.compatibility} passHref>
-                                    <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                        <ShieldCheck className="mr-2 h-4 w-4" /> Compatibility
-                                    </Button>
-                                </Link>
-                            )}
-                             {analysisLinks?.gaming && (
-                                <Link href={analysisLinks.gaming} passHref>
-                                    <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                        <Gamepad2 className="mr-2 h-4 w-4" /> Gaming FPS
-                                    </Button>
-                                </Link>
-                            )}
-                        </div>
+                 <div className="mt-4 space-y-4">
+                  <h4 className="text-lg font-semibold text-primary">Build Analysis</h4>
+                  {analysisLoading ? (
+                    <div className="flex items-center justify-center py-6 bg-card/50 rounded-lg">
+                      <LoadingSpinner />
+                      <p className="ml-3 text-muted-foreground">Performing deep analysis on the build...</p>
                     </div>
+                  ) : (
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                      {bottleneckReport && <BottleneckReportCard report={bottleneckReport} />}
+                      {compatibilityReport && <CompatibilityReportCard report={compatibilityReport} />}
+                      {gamingReport && <GamingReportCard report={gamingReport} />}
+                    </div>
+                  )}
+                  {analysisLinks?.cpu && analysisLinks?.gpu && (
+                    <Dialog open={isBenchmarkDialogOpen} onOpenChange={setIsBenchmarkDialogOpen}>
+                      <DialogTrigger asChild>
+                          <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
+                              <TestTube2 className="mr-2 h-4 w-4" /> Show Detailed Benchmarks
+                          </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl">
+                          <DialogHeader>
+                              <DialogTitle>Benchmark Scores for {analysisLinks.cpu} & {analysisLinks.gpu}</DialogTitle>
+                          </DialogHeader>
+                          {isBenchmarkDialogOpen && (
+                              <BenchmarkResults cpuName={analysisLinks.cpu} gpuName={analysisLinks.gpu} />
+                          )}
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
               </div>
             )}
@@ -344,4 +352,69 @@ function ComponentCard({ component }: { component: PCComponent }) {
       )}
     </div>
   );
+}
+
+const BottleneckReportCard = ({ report }: { report: BottleneckInfo }) => {
+  const getBottleneckColor = (percentage: number) => {
+    const absPercentage = Math.abs(percentage);
+    if (absPercentage > 20) return 'hsl(var(--destructive))';
+    if (absPercentage > 10) return 'hsl(var(--chart-4))';
+    return 'hsl(var(--accent))';
+  };
+  return (
+    <GlassCard className="p-4">
+      <GlassCardTitle className="text-lg mb-2 flex items-center"><Zap className="mr-2 h-5 w-5" /> Bottleneck</GlassCardTitle>
+      <p
+        className="text-3xl font-bold"
+        style={{ color: getBottleneckColor(report.bottleneckPercentage) }}
+      >
+        {report.bottleneckPercentage.toFixed(1)}%
+      </p>
+      <Progress
+        value={Math.abs(report.bottleneckPercentage)}
+        className="w-full h-2 mt-1 rounded-full"
+        style={{ '--indicator-color': getBottleneckColor(report.bottleneckPercentage) } as React.CSSProperties}
+      />
+      <p className="text-xs text-muted-foreground mt-1">{report.explanation}</p>
+    </GlassCard>
+  );
+};
+
+const CompatibilityReportCard = ({ report }: { report: CompatibilityReport }) => {
+  return (
+    <GlassCard className="p-4">
+       <GlassCardTitle className="text-lg mb-2 flex items-center"><ShieldCheck className="mr-2 h-5 w-5" /> Compatibility</GlassCardTitle>
+       <div className="flex items-center gap-2">
+         {report.isGenerallyCompatible ? (
+            <CheckCircle className="h-6 w-6 text-accent" />
+          ) : (
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          )}
+        <p className="font-semibold">{report.isGenerallyCompatible ? "Compatible" : "Issues Found"}</p>
+       </div>
+       <p className="text-xs text-muted-foreground mt-1">{report.overallAssessment}</p>
+       {report.issues.length > 0 && (
+         <div className="mt-2 text-xs text-destructive/90">
+          - {report.issues[0].description}
+         </div>
+       )}
+    </GlassCard>
+  );
+};
+
+const GamingReportCard = ({ report }: { report: GamingPerformanceOutput }) => {
+  return (
+    <GlassCard className="p-4">
+      <GlassCardTitle className="text-lg mb-2 flex items-center"><Gamepad2 className="mr-2 h-5 w-5" /> Gaming FPS</GlassCardTitle>
+      <p className="text-xs text-muted-foreground mb-2">Estimated FPS for Cyberpunk 2077</p>
+      <div className="space-y-1">
+        {report.performance.map(p => (
+          <div key={p.resolution} className="flex justify-between items-center text-sm">
+            <span className="font-medium">{p.resolution}</span>
+            <Badge variant="secondary" className="font-mono">{p.estimatedFps}</Badge>
+          </div>
+        ))}
+      </div>
+    </GlassCard>
+  )
 }
