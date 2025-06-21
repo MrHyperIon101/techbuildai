@@ -32,7 +32,7 @@ const SuggestPcBuildOutputSchema = z.object({
       link: z.string().describe('Link to buy the component from amazon.in or flipkart.com')
     })
   ).describe('A list of suggested PC components. This list MUST include one of each of the core component types (CPU, GPU, RAM, Motherboard, Storage, PSU, Case, CPU Cooler, Thermal Paste). If peripherals are requested, it MUST also include one of each (Monitor, Keyboard, Mouse). Custom Cables are optional.'),
-  estimatedTotalCost: z.number().describe('The estimated total cost of the PC build in INR.'),
+  estimatedTotalCost: z.number().describe("The estimated total cost of the PC build in INR. This value MUST NOT exceed the user's specified budget."),
   overallPerformance: z.string().describe('Overall performance of the build for the specified usage.'),
   buildExplanation: z.string().describe('Explanation of why these components were chosen.')
 });
@@ -47,57 +47,59 @@ const prompt = ai.definePrompt({
   input: {schema: SuggestPcBuildInputSchema},
   output: {schema: SuggestPcBuildOutputSchema},
   prompt: `You are an expert PC builder. A user wants to build a PC with a budget of {{budget}} INR for {{desiredUsage}}.
-  {{#if includePeripherals}}The user wants to include peripherals (monitor, keyboard, mouse) within this budget.{{/if}}
+It is absolutely critical that the 'estimatedTotalCost' of your suggested build does NOT exceed this budget. Prioritize staying within budget over all other factors if necessary.
 
-  The user has also specified the following preferences, which you must follow:
-  {{#if chassisSize}}
-  - Desired Chassis Size: {{chassisSize}}. You must select a PC Case that fits this size requirement (e.g., ATX Mid-Tower, mITX for SFF). This will also constrain your motherboard choice (e.g., an ITX or Micro-ATX motherboard for SFF builds).
-  {{/if}}
-  {{#if buildTheme}}
-  - Desired Build Theme: "{{buildTheme}}".
-  - If the budget is high (e.g., greater than 150000 INR), you MUST prioritize components that match this aesthetic. For example, for an "all white" build, you must choose a white case, a motherboard with white or silver accents, and white RAM modules. For these high-budget themed builds, you should also suggest 'Custom Cables' from a brand like CableMod to complete the look.
-  - If the budget is not high, you should still try to adhere to the theme if possible without significantly compromising performance for the cost (e.g., picking a black case for a 'black with RGB' theme is easy), but do not include expensive aesthetic items like custom cables.
-  {{/if}}
+{{#if includePeripherals}}The user wants to include peripherals (monitor, keyboard, mouse) within this budget.{{/if}}
 
-  Your task is to suggest a complete and compatible set of PC components. You MUST suggest exactly one of each of the following core components:
-  - CPU
-  - Motherboard
-  - RAM (e.g., "16GB DDR4 3200MHz")
-  - GPU (Graphics Card)
-  - Storage (e.g., "1TB NVMe SSD")
-  - PSU (Power Supply Unit) (e.g., "750W Gold")
-  - Case (e.g., "Mid Tower ATX")
-  - CPU Cooler
-  - Thermal Paste
+The user has also specified the following preferences, which you must follow:
+{{#if chassisSize}}
+- Desired Chassis Size: {{chassisSize}}. You must select a PC Case that fits this size requirement (e.g., ATX Mid-Tower, mITX for SFF). This will also constrain your motherboard choice (e.g., an ITX or Micro-ATX motherboard for SFF builds).
+{{/if}}
+{{#if buildTheme}}
+- Desired Build Theme: "{{buildTheme}}".
+- If the budget is high (e.g., greater than 150000 INR), you MUST prioritize components that match this aesthetic. For example, for an "all white" build, you must choose a white case, a motherboard with white or silver accents, and white RAM modules. For these high-budget themed builds, you should also suggest 'Custom Cables' from a brand like CableMod to complete the look.
+- If the budget is not high, you should still try to adhere to the theme if possible without significantly compromising performance for the cost (e.g., picking a black case for a 'black with RGB' theme is easy), but do not include expensive aesthetic items like custom cables.
+{{/if}}
 
-  For the CPU Cooler and Thermal Paste, follow these specific rules:
-  - If the CPU model comes with a decent in-box cooler (e.g., AMD Wraith series for non-X models, Intel non-K SKUs) AND the total budget is under 100000 INR, you should list the CPU Cooler as "In-box CPU Cooler" with a price of 0. In this case, you MUST list the Thermal Paste as "Pre-applied on in-box cooler" with a price of 0.
-  - If the CPU model does not come with a cooler (e.g., AMD 'X' series Ryzen 5 and above, Intel 'K' series) OR if the budget is over 100000 INR, you MUST suggest a suitable after-market air or liquid cooler (e.g., "Deepcool AK400", "Noctua NH-D15"). In this case, for Thermal Paste, you should suggest a high-performance option like "Honeywell PTM7950 pad" or "Arctic MX-4" and provide its price.
+Your task is to suggest a complete and compatible set of PC components. You MUST suggest exactly one of each of the following core components:
+- CPU
+- Motherboard
+- RAM (e.g., "16GB DDR4 3200MHz")
+- GPU (Graphics Card)
+- Storage (e.g., "1TB NVMe SSD")
+- PSU (Power Supply Unit) (e.g., "750W Gold")
+- Case (e.g., "Mid Tower ATX")
+- CPU Cooler
+- Thermal Paste
 
-  For Custom Cables:
-  - Only include a component with the type 'Custom Cables' if the budget is high (over 150000 INR) and a specific build theme has been requested. Otherwise, omit this component.
+For the CPU Cooler and Thermal Paste, follow these specific rules:
+- If the CPU model comes with a decent in-box cooler (e.g., AMD Wraith series for non-X models, Intel non-K SKUs) AND the total budget is under 100000 INR, you should list the CPU Cooler as "In-box CPU Cooler" with a price of 0. In this case, you MUST list the Thermal Paste as "Pre-applied on in-box cooler" with a price of 0.
+- If the CPU model does not come with a cooler (e.g., AMD 'X' series Ryzen 5 and above, Intel 'K' series) OR if the budget is over 100000 INR, you MUST suggest a suitable after-market air or liquid cooler (e.g., "Deepcool AK400", "Noctua NH-D15"). In this case, for Thermal Paste, you should suggest a high-performance option like "Honeywell PTM7950 pad" or "Arctic MX-4" and provide its price.
 
-  {{#if includePeripherals}}
-  You MUST also suggest one of each of the following peripherals, ensuring their cost is accounted for within the total budget:
-  - Monitor
-  - Keyboard
-  - Mouse
-  {{/if}}
+For Custom Cables:
+- Only include a component with the type 'Custom Cables' if the budget is high (over 150000 INR) and a specific build theme has been requested. Otherwise, omit this component.
 
-  For each component and peripheral, provide:
-  - The specific model name.
-  - The component type (must be one of 'CPU', 'Motherboard', 'RAM', 'GPU', 'Storage', 'PSU', 'Case', 'CPU Cooler', 'Thermal Paste', 'Custom Cables'{{#if includePeripherals}}, 'Monitor', 'Keyboard', 'Mouse'{{/if}}).
-  - An estimated price in INR.
-  - A brief description of its estimated performance.
-  - A shopping link, preferably from amazon.in or flipkart.com.
+{{#if includePeripherals}}
+You MUST also suggest one of each of the following peripherals, ensuring their cost is accounted for within the total budget:
+- Monitor
+- Keyboard
+- Mouse
+{{/if}}
 
-  Also provide the estimated total cost for all components, an overall performance summary, and an explanation of your choices.
-  Ensure the components are compatible with each other. For example, the CPU socket must match the motherboard socket, and the motherboard and case form factors must be compatible.
+For each component and peripheral, provide:
+- The specific model name.
+- The component type (must be one of 'CPU', 'Motherboard', 'RAM', 'GPU', 'Storage', 'PSU', 'Case', 'CPU Cooler', 'Thermal Paste', 'Custom Cables'{{#if includePeripherals}}, 'Monitor', 'Keyboard', 'Mouse'{{/if}}).
+- An estimated price in INR.
+- A brief description of its estimated performance.
+- A shopping link, preferably from amazon.in or flipkart.com.
 
-  Prioritize components available on Indian e-commerce sites.
-  The 'components' list MUST include all required core components. If 'includePeripherals' is true, it MUST also include one of each peripheral. The 'Custom Cables' component is optional and should only be included based on the rules above.
-  Respond with a JSON object that strictly follows the output schema.
-  `,
+Also provide the estimated total cost for all components, an overall performance summary, and an explanation of your choices.
+Ensure the components are compatible with each other. For example, the CPU socket must match the motherboard socket, and the motherboard and case form factors must be compatible.
+
+Prioritize components available on Indian e-commerce sites.
+The 'components' list MUST include all required core components. If 'includePeripherals' is true, it MUST also include one of each peripheral. The 'Custom Cables' component is optional and should only be included based on the rules above.
+Respond with a JSON object that strictly follows the output schema.
+`,
 });
 
 const suggestPcBuildFlow = ai.defineFlow(
