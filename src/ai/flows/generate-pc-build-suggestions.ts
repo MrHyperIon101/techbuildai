@@ -14,21 +14,22 @@ import {z} from 'genkit';
 const SuggestPcBuildInputSchema = z.object({
   budget: z.number().describe('The budget for the PC build in INR.'),
   desiredUsage: z.string().describe('The desired usage of the PC (e.g., gaming, video editing).'),
+  includePeripherals: z.boolean().optional().describe('Whether to include peripherals like monitor, keyboard, and mouse in the budget.'),
 });
 export type SuggestPcBuildInput = z.infer<typeof SuggestPcBuildInputSchema>;
 
-const ComponentTypeEnum = z.enum(['CPU', 'GPU', 'RAM', 'Motherboard', 'Storage', 'PSU', 'Case']);
+const ComponentTypeEnum = z.enum(['CPU', 'GPU', 'RAM', 'Motherboard', 'Storage', 'PSU', 'Case', 'Monitor', 'Keyboard', 'Mouse']);
 
 const SuggestPcBuildOutputSchema = z.object({
   components: z.array(
     z.object({
       name: z.string().describe('The name of the component.'),
-      type: ComponentTypeEnum.describe('The type of component. Must be one of: CPU, GPU, RAM, Motherboard, Storage, PSU, Case.'),
+      type: ComponentTypeEnum.describe("The type of component. Must be one of: CPU, GPU, RAM, Motherboard, Storage, PSU, Case, and if requested, Monitor, Keyboard, Mouse."),
       price: z.number().describe('The price of the component in INR.'),
       estimatedPerformance: z.string().describe('Estimated performance of the component for the given usage.'),
       link: z.string().describe('Link to buy the component from amazon.in or flipkart.com')
     })
-  ).describe('A list of suggested PC components. This list MUST include one of each of the following component types: CPU, GPU, RAM, Motherboard, Storage, PSU, and Case.'),
+  ).describe('A list of suggested PC components. This list MUST include one of each of the core component types (CPU, GPU, RAM, Motherboard, Storage, PSU, Case). If peripherals are requested, it MUST also include one of each (Monitor, Keyboard, Mouse).'),
   estimatedTotalCost: z.number().describe('The estimated total cost of the PC build in INR.'),
   overallPerformance: z.string().describe('Overall performance of the build for the specified usage.'),
   buildExplanation: z.string().describe('Explanation of why these components were chosen.')
@@ -44,6 +45,7 @@ const prompt = ai.definePrompt({
   input: {schema: SuggestPcBuildInputSchema},
   output: {schema: SuggestPcBuildOutputSchema},
   prompt: `You are an expert PC builder. A user wants to build a PC with a budget of {{budget}} INR for {{desiredUsage}}.
+  {{#if includePeripherals}}The user wants to include peripherals (monitor, keyboard, mouse) within this budget.{{/if}}
 
   Your task is to suggest a complete and compatible set of PC components. You MUST suggest exactly one of each of the following core components:
   - CPU
@@ -53,10 +55,17 @@ const prompt = ai.definePrompt({
   - Storage (e.g., "1TB NVMe SSD")
   - PSU (Power Supply Unit) (e.g., "750W Gold")
   - Case (e.g., "Mid Tower ATX")
+  
+  {{#if includePeripherals}}
+  You MUST also suggest one of each of the following peripherals, ensuring their cost is accounted for within the total budget:
+  - Monitor
+  - Keyboard
+  - Mouse
+  {{/if}}
 
-  For each component, provide:
+  For each component and peripheral, provide:
   - The specific model name.
-  - The component type (must be one of 'CPU', 'Motherboard', 'RAM', 'GPU', 'Storage', 'PSU', 'Case').
+  - The component type (must be one of 'CPU', 'Motherboard', 'RAM', 'GPU', 'Storage', 'PSU', 'Case'{{#if includePeripherals}}, 'Monitor', 'Keyboard', 'Mouse'{{/if}}).
   - An estimated price in INR.
   - A brief description of its estimated performance.
   - A shopping link, preferably from amazon.in or flipkart.com.
@@ -65,6 +74,7 @@ const prompt = ai.definePrompt({
   Ensure the components are compatible with each other. For example, the CPU socket must match the motherboard socket, and the motherboard and case form factors must be compatible.
 
   Prioritize components available on Indian e-commerce sites.
+  The 'components' list MUST include all required core components. If 'includePeripherals' is true, it MUST also include one of each peripheral.
   Respond with a JSON object that strictly follows the output schema.
   `,
 });

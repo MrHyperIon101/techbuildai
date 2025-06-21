@@ -1,14 +1,14 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle, GlassCardFooter } from '@/components/common/glass-card';
 import { SectionTitle } from '@/components/common/section-title';
 import { LoadingSpinner } from '@/components/common/loading-spinner';
@@ -16,13 +16,15 @@ import { useToast } from '@/hooks/use-toast';
 import { handleSuggestPcBuild } from '@/lib/actions';
 import type { BuildSuggestion, PCComponent } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
-import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, MemoryStick, HardDrive, Power, HardDriveDownload } from 'lucide-react';
+import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, MemoryStick, HardDrive, Power, HardDriveDownload, Monitor, Keyboard, Mouse } from 'lucide-react';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 
 const builderFormSchema = z.object({
   budget: z.coerce.number().min(8000, "Budget must be at least ₹8,000").max(8000000, "Budget cannot exceed ₹8,000,000"),
   desiredUsage: z.string().min(10, "Please describe your needs in at least 10 characters.").max(500, "Description is too long."),
+  includePeripherals: z.boolean().default(false),
 });
 
 type BuilderFormValues = z.infer<typeof builderFormSchema>;
@@ -32,29 +34,33 @@ const componentIcons: { [key: string]: React.ElementType } = {
   gpu: Video,
   ram: MemoryStick,
   storage: HardDrive,
-  motherboard: HardDriveDownload, // Represents chipset/motherboard
+  motherboard: HardDriveDownload, 
   psu: Power,
-  case: (props) => <div {...props} className="w-5 h-5 border-2 rounded-sm border-current" />, // Custom case icon
+  case: (props) => <div {...props} className="w-5 h-5 border-2 rounded-sm border-current" />,
+  monitor: Monitor,
+  keyboard: Keyboard,
+  mouse: Mouse,
 };
 
 export default function AiPcBuilderPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<BuildSuggestion | null>(null);
   const { toast } = useToast();
-  const { addMessage, getMessagesByFeature } = useConversation();
+  const { addMessage } = useConversation();
 
   const form = useForm<BuilderFormValues>({
     resolver: zodResolver(builderFormSchema),
     defaultValues: {
       budget: 80000,
       desiredUsage: 'Gaming at 1440p and some light video editing.',
+      includePeripherals: false,
     },
   });
 
   const onSubmit: SubmitHandler<BuilderFormValues> = async (data) => {
     setIsLoading(true);
     setSuggestion(null);
-    addMessage({ type: 'user', feature: 'builder', content: `Budget: ₹${data.budget}, Usage: ${data.desiredUsage}` });
+    addMessage({ type: 'user', feature: 'builder', content: `Budget: ₹${data.budget}, Usage: ${data.desiredUsage}, Peripherals: ${data.includePeripherals}` });
     try {
       const result = await handleSuggestPcBuild(data);
       setSuggestion(result);
@@ -76,8 +82,6 @@ export default function AiPcBuilderPage() {
       setIsLoading(false);
     }
   };
-  
-  const conversationMessages = getMessagesByFeature('builder');
 
   const analysisLinks = useMemo(() => {
     if (!suggestion) return null;
@@ -144,6 +148,28 @@ export default function AiPcBuilderPage() {
                         <Textarea placeholder="e.g., High-end gaming, 4K video editing, streaming" {...field} className="bg-background/50 rounded-xl p-4 min-h-[100px]" />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="includePeripherals"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-full border p-3 px-4 bg-background/20">
+                      <div className="space-y-0.5">
+                        <FormLabel>
+                          Include Peripherals?
+                        </FormLabel>
+                        <FormDescription className="text-xs">
+                          Monitor, Keyboard & Mouse
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                 />
