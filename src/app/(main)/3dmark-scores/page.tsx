@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,9 +18,10 @@ import { useConversation } from '@/contexts/conversation-context';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChartHorizontalBig, Layers, Info, ArrowUpDown, ListChecks } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import type { ChartConfig } from '@/components/ui/chart';
+import { useSearchParams } from 'next/navigation';
 
 const searchSchema = z.object({
   gpuName: z.string().max(100, "GPU name is too long.").optional(),
@@ -63,7 +64,6 @@ function TopGpuChart({ scores }: { scores: Gpu3dMarkScoreEntry[] }) {
         </div>
     );
 }
-
 
 function SortableGpuScoreTable({ scores, dataSourceNotes, initialSortKey = 'score' }: { scores: Gpu3dMarkScoreEntry[], dataSourceNotes?: string, initialSortKey?: SortKeyGpu }) {
   const [sortKey, setSortKey] = useState<SortKeyGpu>(initialSortKey);
@@ -154,7 +154,7 @@ function SortableGpuScoreTable({ scores, dataSourceNotes, initialSortKey = 'scor
   );
 }
 
-export default function ThreeDMarkScoresPage() {
+function ThreeDMarkScoresView() {
   const [isLoadingTopGpus, setIsLoadingTopGpus] = useState(false);
   const [topGpuScoresOutput, setTopGpuScoresOutput] = useState<Gpu3dMarkScoresOutput | null>(null);
   
@@ -164,40 +164,15 @@ export default function ThreeDMarkScoresPage() {
   
   const { toast } = useToast();
   const { addMessage } = useConversation();
+  const searchParams = useSearchParams();
+  const gpuQuery = searchParams.get('gpuName');
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
     defaultValues: { gpuName: '' },
   });
 
-  const fetchTopGpuScores = async () => {
-    setIsLoadingTopGpus(true);
-    setTopGpuScoresOutput(null);
-    addMessage({ type: 'user', feature: '3dmark-scores', content: `Fetching general list of top GPU 3DMark scores.` });
-    try {
-      const result = await handleGet3dMarkScores({ gpuName: undefined });
-      setTopGpuScoresOutput(result);
-      addMessage({ type: 'ai', feature: '3dmark-scores', content: `Top GPU 3DMark scores list:`, data: result });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top GPU list.";
-      toast({
-        title: "Error Fetching Top GPU Scores",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      addMessage({ type: 'system', feature: '3dmark-scores', content: `Error: ${errorMessage}` });
-      setTopGpuScoresOutput({ scores: [], dataSourceNotes: errorMessage });
-    } finally {
-      setIsLoadingTopGpus(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchTopGpuScores();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onSearchSubmit: SubmitHandler<SearchFormValues> = async (data) => {
+  const onSearchSubmit: SubmitHandler<SearchFormValues> = useCallback(async (data) => {
     setIsLoadingSearch(true);
     setSearchResultOutput(null); 
     const queryInput = data?.gpuName?.trim() || "";
@@ -232,7 +207,39 @@ export default function ThreeDMarkScoresPage() {
     } finally {
       setIsLoadingSearch(false);
     }
-  };
+  }, [addMessage, toast]);
+
+  const fetchTopGpuScores = useCallback(async () => {
+    setIsLoadingTopGpus(true);
+    setTopGpuScoresOutput(null);
+    addMessage({ type: 'user', feature: '3dmark-scores', content: `Fetching general list of top GPU 3DMark scores.` });
+    try {
+      const result = await handleGet3dMarkScores({ gpuName: undefined });
+      setTopGpuScoresOutput(result);
+      addMessage({ type: 'ai', feature: '3dmark-scores', content: `Top GPU 3DMark scores list:`, data: result });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top GPU list.";
+      toast({
+        title: "Error Fetching Top GPU Scores",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      addMessage({ type: 'system', feature: '3dmark-scores', content: `Error: ${errorMessage}` });
+      setTopGpuScoresOutput({ scores: [], dataSourceNotes: errorMessage });
+    } finally {
+      setIsLoadingTopGpus(false);
+    }
+  }, [addMessage, toast]);
+  
+  useEffect(() => {
+    if (gpuQuery) {
+        form.setValue('gpuName', gpuQuery);
+        onSearchSubmit({ gpuName: gpuQuery });
+    } else {
+        fetchTopGpuScores();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gpuQuery]);
   
   return (
     <div className="space-y-8">
@@ -246,7 +253,7 @@ export default function ThreeDMarkScoresPage() {
           </GlassCardTitle>
         </GlassCardHeader>
         <GlassCardContent>
-          {isLoadingTopGpus && (
+          {isLoadingTopGpus && !gpuQuery && (
             <div className="flex flex-col items-center justify-center py-10">
               <LoadingSpinner size={48} />
               <p className="mt-4 text-muted-foreground">Fetching top GPU scores...</p>
@@ -333,7 +340,7 @@ export default function ThreeDMarkScoresPage() {
          </GlassCard>
       )}
 
-       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQuery) && ( 
+       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQuery) && !gpuQuery && ( 
          <GlassCard className="mt-6 opacity-70">
            <GlassCardHeader><GlassCardTitle>Search Results</GlassCardTitle></GlassCardHeader>
            <GlassCardContent className="py-10 text-center">
@@ -345,4 +352,17 @@ export default function ThreeDMarkScoresPage() {
       )}
     </div>
   );
+}
+
+
+export default function ThreeDMarkScoresPage() {
+    return (
+      <Suspense fallback={
+        <div className="flex justify-center items-center py-16">
+          <LoadingSpinner size={48} />
+        </div>
+      }>
+        <ThreeDMarkScoresView />
+      </Suspense>
+    );
 }

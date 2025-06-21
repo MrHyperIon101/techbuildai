@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,6 +21,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import type { ChartConfig } from '@/components/ui/chart';
+import { useSearchParams } from 'next/navigation';
 
 
 const searchSchema = z.object({
@@ -168,7 +169,7 @@ function SortableScoreTable({ scores, dataSourceNotes, initialSortKey = 'r23Mult
 }
 
 
-export default function CinebenchScoresPage() {
+function CinebenchScoresView() {
   const [isLoadingTopCpus, setIsLoadingTopCpus] = useState(false);
   const [topCpuScoresOutput, setTopCpuScoresOutput] = useState<CinebenchScoresOutput | null>(null);
 
@@ -178,40 +179,15 @@ export default function CinebenchScoresPage() {
 
   const { toast } = useToast();
   const { addMessage } = useConversation();
+  const searchParams = useSearchParams();
+  const cpuQuery = searchParams.get('cpuName');
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
     defaultValues: { cpuName: '' },
   });
 
-  const fetchTopCpuScores = async () => {
-    setIsLoadingTopCpus(true);
-    setTopCpuScoresOutput(null);
-    addMessage({ type: 'user', feature: 'cinebench-scores', content: `Fetching general list of top CPU Cinebench scores.` });
-    try {
-      const result = await handleGetCinebenchScores({ cpuName: undefined });
-      setTopCpuScoresOutput(result);
-      addMessage({ type: 'ai', feature: 'cinebench-scores', content: `Top CPU Cinebench scores list:`, data: result });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top CPU list.";
-      toast({
-        title: "Error Fetching Top CPU Scores",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      addMessage({ type: 'system', feature: 'cinebench-scores', content: `Error: ${errorMessage}` });
-      setTopCpuScoresOutput({ scores: [], dataSourceNotes: errorMessage });
-    } finally {
-      setIsLoadingTopCpus(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTopCpuScores();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onSearchSubmit: SubmitHandler<SearchFormValues> = async (data) => {
+  const onSearchSubmit: SubmitHandler<SearchFormValues> = useCallback(async (data) => {
     setIsLoadingSearch(true);
     setSearchResultOutput(null);
     const queryInput = data?.cpuName?.trim() || "";
@@ -246,7 +222,39 @@ export default function CinebenchScoresPage() {
     } finally {
       setIsLoadingSearch(false);
     }
-  };
+  }, [addMessage, toast]);
+
+  const fetchTopCpuScores = useCallback(async () => {
+    setIsLoadingTopCpus(true);
+    setTopCpuScoresOutput(null);
+    addMessage({ type: 'user', feature: 'cinebench-scores', content: `Fetching general list of top CPU Cinebench scores.` });
+    try {
+      const result = await handleGetCinebenchScores({ cpuName: undefined });
+      setTopCpuScoresOutput(result);
+      addMessage({ type: 'ai', feature: 'cinebench-scores', content: `Top CPU Cinebench scores list:`, data: result });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top CPU list.";
+      toast({
+        title: "Error Fetching Top CPU Scores",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      addMessage({ type: 'system', feature: 'cinebench-scores', content: `Error: ${errorMessage}` });
+      setTopCpuScoresOutput({ scores: [], dataSourceNotes: errorMessage });
+    } finally {
+      setIsLoadingTopCpus(false);
+    }
+  }, [addMessage, toast]);
+
+  useEffect(() => {
+    if (cpuQuery) {
+        form.setValue('cpuName', cpuQuery);
+        onSearchSubmit({ cpuName: cpuQuery });
+    } else {
+        fetchTopCpuScores();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cpuQuery]);
 
   return (
     <div className="space-y-8">
@@ -260,7 +268,7 @@ export default function CinebenchScoresPage() {
           </GlassCardTitle>
         </GlassCardHeader>
         <GlassCardContent>
-          {isLoadingTopCpus && (
+          {isLoadingTopCpus && !cpuQuery && (
             <div className="flex flex-col items-center justify-center py-10">
               <LoadingSpinner size={48} />
               <p className="mt-4 text-muted-foreground">Fetching top CPU scores...</p>
@@ -347,7 +355,7 @@ export default function CinebenchScoresPage() {
          </GlassCard>
       )}
 
-       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQuery) && (
+       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQuery) && !cpuQuery && (
          <GlassCard className="mt-6 opacity-70">
            <GlassCardHeader><GlassCardTitle>Search Results</GlassCardTitle></GlassCardHeader>
            <GlassCardContent className="py-10 text-center">
@@ -359,4 +367,16 @@ export default function CinebenchScoresPage() {
       )}
     </div>
   );
+}
+
+export default function CinebenchScoresPage() {
+    return (
+      <Suspense fallback={
+        <div className="flex justify-center items-center py-16">
+          <LoadingSpinner size={48} />
+        </div>
+      }>
+        <CinebenchScoresView />
+      </Suspense>
+    );
 }

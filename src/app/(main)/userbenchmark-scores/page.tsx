@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Users, Layers, Info, ArrowUpDown, ListChecks, Percent } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { useSearchParams } from 'next/navigation';
 
 const searchSchema = z.object({
   componentName: z.string().max(100, "Component name is too long.").optional(),
@@ -145,7 +146,7 @@ function SortableUserBenchmarkTable({ scores, dataSourceNotes, initialSortKey = 
   );
 }
 
-export default function UserBenchmarkScoresPage() {
+function UserBenchmarkScoresView() {
   const [isLoadingTop, setIsLoadingTop] = useState(false);
   const [topScoresOutput, setTopScoresOutput] = useState<UserBenchmarkScoresOutput | null>(null);
   
@@ -155,40 +156,15 @@ export default function UserBenchmarkScoresPage() {
   
   const { toast } = useToast();
   const { addMessage } = useConversation();
+  const searchParams = useSearchParams();
+  const componentQuery = searchParams.get('componentName');
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
     defaultValues: { componentName: '' },
   });
 
-  const fetchTopScores = async () => {
-    setIsLoadingTop(true);
-    setTopScoresOutput(null);
-    addMessage({ type: 'user', feature: 'userbenchmark-scores', content: `Fetching general list of UserBenchmark scores.` });
-    try {
-      const result = await handleGetUserBenchmarkScores({ componentName: undefined });
-      setTopScoresOutput(result);
-      addMessage({ type: 'ai', feature: 'userbenchmark-scores', content: `General UserBenchmark scores list:`, data: result });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top scores.";
-      toast({
-        title: "Error Fetching Example Scores",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      addMessage({ type: 'system', feature: 'userbenchmark-scores', content: `Error: ${errorMessage}` });
-      setTopScoresOutput({ scores: [], dataSourceNotes: errorMessage });
-    } finally {
-      setIsLoadingTop(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchTopScores();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onSearchSubmit: SubmitHandler<SearchFormValues> = async (data) => {
+  const onSearchSubmit: SubmitHandler<SearchFormValues> = useCallback(async (data) => {
     setIsLoadingSearch(true);
     setSearchResultOutput(null); 
     const queryInput = data?.componentName?.trim() || "";
@@ -223,7 +199,39 @@ export default function UserBenchmarkScoresPage() {
     } finally {
       setIsLoadingSearch(false);
     }
-  };
+  }, [addMessage, toast]);
+  
+  const fetchTopScores = useCallback(async () => {
+    setIsLoadingTop(true);
+    setTopScoresOutput(null);
+    addMessage({ type: 'user', feature: 'userbenchmark-scores', content: `Fetching general list of UserBenchmark scores.` });
+    try {
+      const result = await handleGetUserBenchmarkScores({ componentName: undefined });
+      setTopScoresOutput(result);
+      addMessage({ type: 'ai', feature: 'userbenchmark-scores', content: `General UserBenchmark scores list:`, data: result });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top scores.";
+      toast({
+        title: "Error Fetching Example Scores",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      addMessage({ type: 'system', feature: 'userbenchmark-scores', content: `Error: ${errorMessage}` });
+      setTopScoresOutput({ scores: [], dataSourceNotes: errorMessage });
+    } finally {
+      setIsLoadingTop(false);
+    }
+  }, [addMessage, toast]);
+  
+  useEffect(() => {
+    if (componentQuery) {
+        form.setValue('componentName', componentQuery);
+        onSearchSubmit({ componentName: componentQuery });
+    } else {
+        fetchTopScores();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [componentQuery]);
   
   return (
     <div className="space-y-8">
@@ -237,7 +245,7 @@ export default function UserBenchmarkScoresPage() {
           </GlassCardTitle>
         </GlassCardHeader>
         <GlassCardContent>
-          {isLoadingTop && (
+          {isLoadingTop && !componentQuery && (
             <div className="flex flex-col items-center justify-center py-10">
               <LoadingSpinner size={48} />
               <p className="mt-4 text-muted-foreground">Fetching example scores...</p>
@@ -321,7 +329,7 @@ export default function UserBenchmarkScoresPage() {
          </GlassCard>
       )}
 
-       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQueryText) && ( 
+       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQueryText) && !componentQuery && ( 
          <GlassCard className="mt-6 opacity-70">
            <GlassCardHeader><GlassCardTitle>Search Results</GlassCardTitle></GlassCardHeader>
            <GlassCardContent className="py-10 text-center">
@@ -335,3 +343,14 @@ export default function UserBenchmarkScoresPage() {
   );
 }
     
+export default function UserBenchmarkScoresPage() {
+    return (
+      <Suspense fallback={
+        <div className="flex justify-center items-center py-16">
+          <LoadingSpinner size={48} />
+        </div>
+      }>
+        <UserBenchmarkScoresView />
+      </Suspense>
+    );
+}

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle, GlassCardFooter } from '@/components/common/glass-card';
+import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import { SectionTitle } from '@/components/common/section-title';
 import { LoadingSpinner } from '@/components/common/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const builderFormSchema = z.object({
   budget: z.coerce.number().min(8000, "Budget must be at least ₹8,000").max(8000000, "Budget cannot exceed ₹8,000,000"),
@@ -117,6 +118,8 @@ export default function AiPcBuilderPage() {
       bottleneck: (cpu && gpu) ? `/bottleneck-calculator?cpu=${encodeURIComponent(cpu)}&gpu=${encodeURIComponent(gpu)}` : null,
       compatibility: `/compatibility-checker?${compatibilityParams.toString()}`,
       gaming: (cpu && gpu) ? `/gaming-estimator?cpu=${encodeURIComponent(cpu)}&gpu=${encodeURIComponent(gpu)}` : null,
+      cpu,
+      gpu,
     };
   }, [suggestion]);
 
@@ -260,29 +263,71 @@ export default function AiPcBuilderPage() {
                     ))}
                   </div>
                 </ScrollArea>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4">
-                    {analysisLinks?.bottleneck && (
-                        <Link href={analysisLinks.bottleneck} passHref>
-                            <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                <BarChart3 className="mr-2 h-4 w-4" /> Check Bottlenecks
-                            </Button>
-                        </Link>
-                    )}
-                     {analysisLinks?.compatibility && (
-                        <Link href={analysisLinks.compatibility} passHref>
-                            <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                <ShieldCheck className="mr-2 h-4 w-4" /> Check Compatibility
-                            </Button>
-                        </Link>
-                    )}
-                     {analysisLinks?.gaming && (
-                        <Link href={analysisLinks.gaming} passHref>
-                            <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                                <Gamepad2 className="mr-2 h-4 w-4" /> Estimate Gaming FPS
-                            </Button>
-                        </Link>
-                    )}
+                
+                <div className="mt-4 space-y-3">
+                    <div>
+                        <h4 className="text-lg font-semibold text-primary mb-2">Build Analysis</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            {analysisLinks?.bottleneck && (
+                                <Link href={analysisLinks.bottleneck} passHref>
+                                    <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
+                                        <BarChart3 className="mr-2 h-4 w-4" /> Check Bottlenecks
+                                    </Button>
+                                </Link>
+                            )}
+                             {analysisLinks?.compatibility && (
+                                <Link href={analysisLinks.compatibility} passHref>
+                                    <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
+                                        <ShieldCheck className="mr-2 h-4 w-4" /> Check Compatibility
+                                    </Button>
+                                </Link>
+                            )}
+                             {analysisLinks?.gaming && (
+                                <Link href={analysisLinks.gaming} passHref>
+                                    <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
+                                        <Gamepad2 className="mr-2 h-4 w-4" /> Estimate Gaming FPS
+                                    </Button>
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                    <div>
+                        <h4 className="text-lg font-semibold text-primary mb-2">Component Benchmarks</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                           {analysisLinks?.cpu && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
+                                    <Cpu className="mr-2 h-4 w-4" /> Check CPU Scores
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem asChild><Link href={`/cinebench-scores?cpuName=${encodeURIComponent(analysisLinks.cpu!)}`}>Cinebench</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link href={`/geekbench-scores?componentName=${encodeURIComponent(analysisLinks.cpu!)}`}>Geekbench</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link href={`/aida64-scores?componentQuery=${encodeURIComponent(analysisLinks.cpu!)}`}>AIDA64</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link href={`/userbenchmark-scores?componentName=${encodeURIComponent(analysisLinks.cpu!)}`}>UserBenchmark</Link></DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                            {analysisLinks?.gpu && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
+                                    <Video className="mr-2 h-4 w-4" /> Check GPU Scores
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem asChild><Link href={`/3dmark-scores?gpuName=${encodeURIComponent(analysisLinks.gpu!)}`}>3DMark</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link href={`/furmark-scores?gpuName=${encodeURIComponent(analysisLinks.gpu!)}`}>FurMark</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link href={`/geekbench-scores?componentName=${encodeURIComponent(analysisLinks.gpu!)}`}>Geekbench</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link href={`/userbenchmark-scores?componentName=${encodeURIComponent(analysisLinks.gpu!)}`}>UserBenchmark</Link></DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                        </div>
+                    </div>
                 </div>
+
               </div>
             )}
           </GlassCardContent>

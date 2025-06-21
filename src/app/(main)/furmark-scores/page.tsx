@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,6 +18,7 @@ import { useConversation } from '@/contexts/conversation-context';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Flame, Layers, Info, ArrowUpDown, ListChecks, Thermometer } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useSearchParams } from 'next/navigation';
 
 const searchSchema = z.object({
   gpuName: z.string().max(100, "GPU name is too long.").optional(),
@@ -122,7 +123,7 @@ function SortableFurMarkTable({ scores, dataSourceNotes, initialSortKey = 'score
   );
 }
 
-export default function FurMarkScoresPage() {
+function FurMarkScoresView() {
   const [isLoadingTopGpus, setIsLoadingTopGpus] = useState(false);
   const [topGpuScoresOutput, setTopGpuScoresOutput] = useState<FurMarkScoresOutput | null>(null);
   
@@ -132,40 +133,15 @@ export default function FurMarkScoresPage() {
   
   const { toast } = useToast();
   const { addMessage } = useConversation();
+  const searchParams = useSearchParams();
+  const gpuQuery = searchParams.get('gpuName');
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
     defaultValues: { gpuName: '' },
   });
 
-  const fetchTopGpuScores = async () => {
-    setIsLoadingTopGpus(true);
-    setTopGpuScoresOutput(null);
-    addMessage({ type: 'user', feature: 'furmark-scores', content: `Fetching general list of top GPU FurMark scores.` });
-    try {
-      const result = await handleGetFurMarkScores({ gpuName: undefined });
-      setTopGpuScoresOutput(result);
-      addMessage({ type: 'ai', feature: 'furmark-scores', content: `Top GPU FurMark scores list:`, data: result });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top GPU list.";
-      toast({
-        title: "Error Fetching Top GPU Scores",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      addMessage({ type: 'system', feature: 'furmark-scores', content: `Error: ${errorMessage}` });
-      setTopGpuScoresOutput({ scores: [], dataSourceNotes: errorMessage });
-    } finally {
-      setIsLoadingTopGpus(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchTopGpuScores();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onSearchSubmit: SubmitHandler<SearchFormValues> = async (data) => {
+  const onSearchSubmit: SubmitHandler<SearchFormValues> = useCallback(async (data) => {
     setIsLoadingSearch(true);
     setSearchResultOutput(null); 
     const queryInput = data?.gpuName?.trim() || "";
@@ -200,7 +176,39 @@ export default function FurMarkScoresPage() {
     } finally {
       setIsLoadingSearch(false);
     }
-  };
+  }, [addMessage, toast]);
+  
+  const fetchTopGpuScores = useCallback(async () => {
+    setIsLoadingTopGpus(true);
+    setTopGpuScoresOutput(null);
+    addMessage({ type: 'user', feature: 'furmark-scores', content: `Fetching general list of top GPU FurMark scores.` });
+    try {
+      const result = await handleGetFurMarkScores({ gpuName: undefined });
+      setTopGpuScoresOutput(result);
+      addMessage({ type: 'ai', feature: 'furmark-scores', content: `Top GPU FurMark scores list:`, data: result });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top GPU list.";
+      toast({
+        title: "Error Fetching Top GPU Scores",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      addMessage({ type: 'system', feature: 'furmark-scores', content: `Error: ${errorMessage}` });
+      setTopGpuScoresOutput({ scores: [], dataSourceNotes: errorMessage });
+    } finally {
+      setIsLoadingTopGpus(false);
+    }
+  }, [addMessage, toast]);
+  
+  useEffect(() => {
+    if (gpuQuery) {
+        form.setValue('gpuName', gpuQuery);
+        onSearchSubmit({ gpuName: gpuQuery });
+    } else {
+        fetchTopGpuScores();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gpuQuery]);
   
   return (
     <div className="space-y-8">
@@ -214,7 +222,7 @@ export default function FurMarkScoresPage() {
           </GlassCardTitle>
         </GlassCardHeader>
         <GlassCardContent>
-          {isLoadingTopGpus && (
+          {isLoadingTopGpus && !gpuQuery && (
             <div className="flex flex-col items-center justify-center py-10">
               <LoadingSpinner size={48} />
               <p className="mt-4 text-muted-foreground">Fetching top GPU scores...</p>
@@ -298,7 +306,7 @@ export default function FurMarkScoresPage() {
          </GlassCard>
       )}
 
-       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQuery) && ( 
+       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQuery) && !gpuQuery && ( 
          <GlassCard className="mt-6 opacity-70">
            <GlassCardHeader><GlassCardTitle>Search Results</GlassCardTitle></GlassCardHeader>
            <GlassCardContent className="py-10 text-center">
@@ -310,4 +318,17 @@ export default function FurMarkScoresPage() {
       )}
     </div>
   );
+}
+
+
+export default function FurMarkScoresPage() {
+    return (
+      <Suspense fallback={
+        <div className="flex justify-center items-center py-16">
+          <LoadingSpinner size={48} />
+        </div>
+      }>
+        <FurMarkScoresView />
+      </Suspense>
+    );
 }

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,6 +18,7 @@ import { useConversation } from '@/contexts/conversation-context';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Brain, Layers, Info, ArrowUpDown, ListChecks, Cpu } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useSearchParams } from 'next/navigation';
 
 const searchSchema = z.object({
   componentName: z.string().max(100, "Component name is too long.").optional(),
@@ -140,7 +141,7 @@ function SortableGeekbenchTable({ scores, dataSourceNotes, initialSortKey = 'mul
   );
 }
 
-export default function GeekbenchScoresPage() {
+function GeekbenchScoresView() {
   const [isLoadingTop, setIsLoadingTop] = useState(false);
   const [topScoresOutput, setTopScoresOutput] = useState<GeekbenchScoresOutput | null>(null);
   
@@ -150,40 +151,15 @@ export default function GeekbenchScoresPage() {
   
   const { toast } = useToast();
   const { addMessage } = useConversation();
+  const searchParams = useSearchParams();
+  const componentQuery = searchParams.get('componentName');
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
     defaultValues: { componentName: '' },
   });
 
-  const fetchTopScores = async () => {
-    setIsLoadingTop(true);
-    setTopScoresOutput(null);
-    addMessage({ type: 'user', feature: 'geekbench-scores', content: `Fetching general list of Geekbench scores.` });
-    try {
-      const result = await handleGetGeekbenchScores({ componentName: undefined });
-      setTopScoresOutput(result);
-      addMessage({ type: 'ai', feature: 'geekbench-scores', content: `General Geekbench scores list:`, data: result });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top scores.";
-      toast({
-        title: "Error Fetching Top Scores",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      addMessage({ type: 'system', feature: 'geekbench-scores', content: `Error: ${errorMessage}` });
-      setTopScoresOutput({ scores: [], dataSourceNotes: errorMessage });
-    } finally {
-      setIsLoadingTop(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchTopScores();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onSearchSubmit: SubmitHandler<SearchFormValues> = async (data) => {
+  const onSearchSubmit: SubmitHandler<SearchFormValues> = useCallback(async (data) => {
     setIsLoadingSearch(true);
     setSearchResultOutput(null); 
     const queryInput = data?.componentName?.trim() || "";
@@ -218,7 +194,39 @@ export default function GeekbenchScoresPage() {
     } finally {
       setIsLoadingSearch(false);
     }
-  };
+  }, [addMessage, toast]);
+  
+  const fetchTopScores = useCallback(async () => {
+    setIsLoadingTop(true);
+    setTopScoresOutput(null);
+    addMessage({ type: 'user', feature: 'geekbench-scores', content: `Fetching general list of Geekbench scores.` });
+    try {
+      const result = await handleGetGeekbenchScores({ componentName: undefined });
+      setTopScoresOutput(result);
+      addMessage({ type: 'ai', feature: 'geekbench-scores', content: `General Geekbench scores list:`, data: result });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top scores.";
+      toast({
+        title: "Error Fetching Top Scores",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      addMessage({ type: 'system', feature: 'geekbench-scores', content: `Error: ${errorMessage}` });
+      setTopScoresOutput({ scores: [], dataSourceNotes: errorMessage });
+    } finally {
+      setIsLoadingTop(false);
+    }
+  }, [addMessage, toast]);
+  
+  useEffect(() => {
+    if (componentQuery) {
+        form.setValue('componentName', componentQuery);
+        onSearchSubmit({ componentName: componentQuery });
+    } else {
+        fetchTopScores();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [componentQuery]);
   
   return (
     <div className="space-y-8">
@@ -232,7 +240,7 @@ export default function GeekbenchScoresPage() {
           </GlassCardTitle>
         </GlassCardHeader>
         <GlassCardContent>
-          {isLoadingTop && (
+          {isLoadingTop && !componentQuery && (
             <div className="flex flex-col items-center justify-center py-10">
               <LoadingSpinner size={48} />
               <p className="mt-4 text-muted-foreground">Fetching popular component scores...</p>
@@ -316,7 +324,7 @@ export default function GeekbenchScoresPage() {
          </GlassCard>
       )}
 
-       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQuery) && ( 
+       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQuery) && !componentQuery &&( 
          <GlassCard className="mt-6 opacity-70">
            <GlassCardHeader><GlassCardTitle>Search Results</GlassCardTitle></GlassCardHeader>
            <GlassCardContent className="py-10 text-center">
@@ -328,4 +336,17 @@ export default function GeekbenchScoresPage() {
       )}
     </div>
   );
+}
+
+
+export default function GeekbenchScoresPage() {
+    return (
+      <Suspense fallback={
+        <div className="flex justify-center items-center py-16">
+          <LoadingSpinner size={48} />
+        </div>
+      }>
+        <GeekbenchScoresView />
+      </Suspense>
+    );
 }

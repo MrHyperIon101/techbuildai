@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,6 +18,7 @@ import { useConversation } from '@/contexts/conversation-context';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ClipboardList, Layers, Info, ArrowUpDown, ListChecks, Cpu } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useSearchParams } from 'next/navigation';
 
 const searchSchema = z.object({
   componentQuery: z.string().max(150, "Query is too long.").optional(),
@@ -129,7 +130,7 @@ function SortableAida64Table({ scores, dataSourceNotes, initialSortKey = 'score'
   );
 }
 
-export default function Aida64ScoresPage() {
+function Aida64ScoresView() {
   const [isLoadingTop, setIsLoadingTop] = useState(false);
   const [topScoresOutput, setTopScoresOutput] = useState<Aida64ScoresOutput | null>(null);
   
@@ -139,40 +140,15 @@ export default function Aida64ScoresPage() {
   
   const { toast } = useToast();
   const { addMessage } = useConversation();
+  const searchParams = useSearchParams();
+  const componentQuery = searchParams.get('componentQuery');
 
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
     defaultValues: { componentQuery: '' },
   });
 
-  const fetchTopScores = async () => {
-    setIsLoadingTop(true);
-    setTopScoresOutput(null);
-    addMessage({ type: 'user', feature: 'aida64-scores', content: `Fetching general list of AIDA64 scores.` });
-    try {
-      const result = await handleGetAida64Scores({ componentQuery: undefined });
-      setTopScoresOutput(result);
-      addMessage({ type: 'ai', feature: 'aida64-scores', content: `General AIDA64 scores list:`, data: result });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top scores.";
-      toast({
-        title: "Error Fetching Example Scores",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      addMessage({ type: 'system', feature: 'aida64-scores', content: `Error: ${errorMessage}` });
-      setTopScoresOutput({ scores: [], dataSourceNotes: errorMessage });
-    } finally {
-      setIsLoadingTop(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchTopScores();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onSearchSubmit: SubmitHandler<SearchFormValues> = async (data) => {
+  const onSearchSubmit: SubmitHandler<SearchFormValues> = useCallback(async (data) => {
     setIsLoadingSearch(true);
     setSearchResultOutput(null); 
     const queryInput = data?.componentQuery?.trim() || "";
@@ -207,7 +183,39 @@ export default function Aida64ScoresPage() {
     } finally {
       setIsLoadingSearch(false);
     }
-  };
+  }, [addMessage, toast]);
+
+  const fetchTopScores = useCallback(async () => {
+    setIsLoadingTop(true);
+    setTopScoresOutput(null);
+    addMessage({ type: 'user', feature: 'aida64-scores', content: `Fetching general list of AIDA64 scores.` });
+    try {
+      const result = await handleGetAida64Scores({ componentQuery: undefined });
+      setTopScoresOutput(result);
+      addMessage({ type: 'ai', feature: 'aida64-scores', content: `General AIDA64 scores list:`, data: result });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred fetching top scores.";
+      toast({
+        title: "Error Fetching Example Scores",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      addMessage({ type: 'system', feature: 'aida64-scores', content: `Error: ${errorMessage}` });
+      setTopScoresOutput({ scores: [], dataSourceNotes: errorMessage });
+    } finally {
+      setIsLoadingTop(false);
+    }
+  }, [addMessage, toast]);
+  
+  useEffect(() => {
+    if (componentQuery) {
+        form.setValue('componentQuery', componentQuery);
+        onSearchSubmit({ componentQuery: componentQuery });
+    } else {
+        fetchTopScores();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [componentQuery]);
   
   return (
     <div className="space-y-8">
@@ -221,7 +229,7 @@ export default function Aida64ScoresPage() {
           </GlassCardTitle>
         </GlassCardHeader>
         <GlassCardContent>
-          {isLoadingTop && (
+          {isLoadingTop && !componentQuery && (
             <div className="flex flex-col items-center justify-center py-10">
               <LoadingSpinner size={48} />
               <p className="mt-4 text-muted-foreground">Fetching example scores...</p>
@@ -305,7 +313,7 @@ export default function Aida64ScoresPage() {
          </GlassCard>
       )}
 
-       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQueryText) && ( 
+       {!isLoadingSearch && !searchResultOutput && (!form.formState.isSubmitted || !searchedQueryText) && !componentQuery && ( 
          <GlassCard className="mt-6 opacity-70">
            <GlassCardHeader><GlassCardTitle>Search Results</GlassCardTitle></GlassCardHeader>
            <GlassCardContent className="py-10 text-center">
@@ -318,4 +326,15 @@ export default function Aida64ScoresPage() {
     </div>
   );
 }
-    
+
+export default function Aida64ScoresPage() {
+    return (
+      <Suspense fallback={
+        <div className="flex justify-center items-center py-16">
+          <LoadingSpinner size={48} />
+        </div>
+      }>
+        <Aida64ScoresView />
+      </Suspense>
+    );
+}
