@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { handleSuggestPcBuild } from '@/lib/actions';
 import type { BuildSuggestion, PCComponent } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
-import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, MemoryStick, HardDrive, Power, HardDriveDownload, Monitor, Keyboard, Mouse, TestTube2 } from 'lucide-react';
+import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, MemoryStick, HardDrive, Power, HardDriveDownload, Monitor, Keyboard, Mouse, TestTube2, Wind, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
@@ -41,6 +41,8 @@ const componentIcons: { [key: string]: React.ElementType } = {
   motherboard: HardDriveDownload, 
   psu: Power,
   case: (props) => <div {...props} className="w-5 h-5 border-2 rounded-sm border-current" />,
+  'cpu cooler': Wind,
+  'thermal paste': Layers,
   monitor: Monitor,
   keyboard: Keyboard,
   mouse: Mouse,
@@ -319,7 +321,7 @@ export default function AiPcBuilderPage() {
 }
 
 function ComponentCard({ component }: { component: PCComponent }) {
-    const componentTypeKey = component.type.toLowerCase().split(' ')[0];
+    const componentTypeKey = component.type.toLowerCase();
     const Icon = componentIcons[componentTypeKey] || Bot;
   return (
     <div className="p-4 rounded-lg border border-white/10 bg-card/50 hover:bg-card/80 transition-colors duration-200">

@@ -20,18 +20,18 @@ const SuggestPcBuildInputSchema = z.object({
 });
 export type SuggestPcBuildInput = z.infer<typeof SuggestPcBuildInputSchema>;
 
-const ComponentTypeEnum = z.enum(['CPU', 'GPU', 'RAM', 'Motherboard', 'Storage', 'PSU', 'Case', 'Monitor', 'Keyboard', 'Mouse']);
+const ComponentTypeEnum = z.enum(['CPU', 'GPU', 'RAM', 'Motherboard', 'Storage', 'PSU', 'Case', 'CPU Cooler', 'Thermal Paste', 'Monitor', 'Keyboard', 'Mouse']);
 
 const SuggestPcBuildOutputSchema = z.object({
   components: z.array(
     z.object({
       name: z.string().describe('The name of the component.'),
-      type: ComponentTypeEnum.describe("The type of component. Must be one of: CPU, GPU, RAM, Motherboard, Storage, PSU, Case, and if requested, Monitor, Keyboard, Mouse."),
+      type: ComponentTypeEnum.describe("The type of component. Must be one of: CPU, GPU, RAM, Motherboard, Storage, PSU, Case, CPU Cooler, Thermal Paste, and if requested, Monitor, Keyboard, Mouse."),
       price: z.number().describe('The price of the component in INR.'),
       estimatedPerformance: z.string().describe('Estimated performance of the component for the given usage.'),
       link: z.string().describe('Link to buy the component from amazon.in or flipkart.com')
     })
-  ).describe('A list of suggested PC components. This list MUST include one of each of the core component types (CPU, GPU, RAM, Motherboard, Storage, PSU, Case). If peripherals are requested, it MUST also include one of each (Monitor, Keyboard, Mouse).'),
+  ).describe('A list of suggested PC components. This list MUST include one of each of the core component types (CPU, GPU, RAM, Motherboard, Storage, PSU, Case, CPU Cooler, Thermal Paste). If peripherals are requested, it MUST also include one of each (Monitor, Keyboard, Mouse).'),
   estimatedTotalCost: z.number().describe('The estimated total cost of the PC build in INR.'),
   overallPerformance: z.string().describe('Overall performance of the build for the specified usage.'),
   buildExplanation: z.string().describe('Explanation of why these components were chosen.')
@@ -65,7 +65,13 @@ const prompt = ai.definePrompt({
   - Storage (e.g., "1TB NVMe SSD")
   - PSU (Power Supply Unit) (e.g., "750W Gold")
   - Case (e.g., "Mid Tower ATX")
-  
+  - CPU Cooler
+  - Thermal Paste
+
+  For the CPU Cooler and Thermal Paste, follow these specific rules:
+  - If the CPU model comes with a decent in-box cooler (e.g., AMD Wraith series for non-X models, Intel non-K SKUs) AND the total budget is under 100000 INR, you should list the CPU Cooler as "In-box CPU Cooler" with a price of 0. In this case, you MUST list the Thermal Paste as "Pre-applied on in-box cooler" with a price of 0.
+  - If the CPU model does not come with a cooler (e.g., AMD 'X' series Ryzen 5 and above, Intel 'K' series) OR if the budget is over 100000 INR, you MUST suggest a suitable after-market air or liquid cooler (e.g., "Deepcool AK400", "Noctua NH-D15"). In this case, for Thermal Paste, you should suggest a high-performance option like "Honeywell PTM7950 pad" or "Arctic MX-4" and provide its price.
+
   {{#if includePeripherals}}
   You MUST also suggest one of each of the following peripherals, ensuring their cost is accounted for within the total budget:
   - Monitor
@@ -75,7 +81,7 @@ const prompt = ai.definePrompt({
 
   For each component and peripheral, provide:
   - The specific model name.
-  - The component type (must be one of 'CPU', 'Motherboard', 'RAM', 'GPU', 'Storage', 'PSU', 'Case'{{#if includePeripherals}}, 'Monitor', 'Keyboard', 'Mouse'{{/if}}).
+  - The component type (must be one of 'CPU', 'Motherboard', 'RAM', 'GPU', 'Storage', 'PSU', 'Case', 'CPU Cooler', 'Thermal Paste'{{#if includePeripherals}}, 'Monitor', 'Keyboard', 'Mouse'{{/if}}).
   - An estimated price in INR.
   - A brief description of its estimated performance.
   - A shopping link, preferably from amazon.in or flipkart.com.
