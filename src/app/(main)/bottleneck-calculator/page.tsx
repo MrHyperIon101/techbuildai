@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -27,7 +27,7 @@ const bottleneckFormSchema = z.object({
 
 type BottleneckFormValues = z.infer<typeof bottleneckFormSchema>;
 
-export default function BottleneckCalculatorPage() {
+function BottleneckCalculatorView() {
   const [isLoading, setIsLoading] = useState(false);
   const [bottleneck, setBottleneck] = useState<BottleneckInfo | null>(null);
   const { toast } = useToast();
@@ -91,154 +91,166 @@ export default function BottleneckCalculatorPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <SectionTitle>Bottleneck Calculator</SectionTitle>
-      <div className="space-y-6"> {/* Changed from grid to space-y for vertical stacking */}
-        <GlassCard>
+    <div className="space-y-6"> {/* Changed from grid to space-y for vertical stacking */}
+      <GlassCard>
+        <GlassCardHeader>
+          <GlassCardTitle>Enter Components</GlassCardTitle>
+        </GlassCardHeader>
+        <GlassCardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="cpu"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CPU Model</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Intel Core i7-13700K" {...field} className="bg-background/50 rounded-full px-4" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="gpu"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>GPU Model</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., NVIDIA GeForce RTX 4070 Ti" {...field} className="bg-background/50 rounded-full px-4" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={isLoading} className="w-full rounded-full bg-accent text-accent-foreground hover:bg-accent/90 transition-all duration-300 transform hover:scale-105">
+                {isLoading ? <LoadingSpinner /> : 'Calculate Bottleneck'}
+              </Button>
+            </form>
+          </Form>
+        </GlassCardContent>
+      </GlassCard>
+
+      {(isLoading || bottleneck) && ( // Conditionally render the results card area
+        <GlassCard className="min-h-[300px]">
           <GlassCardHeader>
-            <GlassCardTitle>Enter Components</GlassCardTitle>
+            <GlassCardTitle>Analysis Results</GlassCardTitle>
           </GlassCardHeader>
           <GlassCardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="cpu"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CPU Model</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Intel Core i7-13700K" {...field} className="bg-background/50 rounded-full px-4" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="gpu"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>GPU Model</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., NVIDIA GeForce RTX 4070 Ti" {...field} className="bg-background/50 rounded-full px-4" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={isLoading} className="w-full rounded-full bg-accent text-accent-foreground hover:bg-accent/90 transition-all duration-300 transform hover:scale-105">
-                  {isLoading ? <LoadingSpinner /> : 'Calculate Bottleneck'}
-                </Button>
-              </form>
-            </Form>
-          </GlassCardContent>
-        </GlassCard>
-
-        {(isLoading || bottleneck) && ( // Conditionally render the results card area
-          <GlassCard className="min-h-[300px]">
-            <GlassCardHeader>
-              <GlassCardTitle>Analysis Results</GlassCardTitle>
-            </GlassCardHeader>
-            <GlassCardContent>
-              {isLoading && (
-                <div className="flex flex-col items-center justify-center h-full py-10">
-                  <LoadingSpinner size={48} />
-                  <p className="mt-4 text-muted-foreground">Analyzing components...</p>
-                </div>
-              )}
-              {!isLoading && !bottleneck && ( // This state might be briefly visible or not at all if isLoading covers it
-                <div className="flex flex-col items-center justify-center h-full py-10 text-center">
-                  <Zap size={48} className="text-primary mb-4" />
-                  <p className="text-muted-foreground">Enter CPU and GPU models to analyze potential bottlenecks.</p>
-                </div>
-              )}
-              {bottleneck && (
-                <div className="animate-fade-in space-y-6">
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Overall Bottleneck Score</p>
-                    <p 
-                      className="text-5xl md:text-6xl font-bold"
-                      style={{ color: getBottleneckColor(bottleneck.bottleneckPercentage) }}
-                    >
-                      {bottleneck.bottleneckPercentage.toFixed(1)}%
-                    </p>
-                    <Progress 
-                      value={Math.abs(bottleneck.bottleneckPercentage)} 
-                      className="w-full h-3 mt-2 rounded-full" 
-                      style={{ 
-                        // @ts-ignore 
-                        '--indicator-color': getBottleneckColor(bottleneck.bottleneckPercentage) 
-                      }}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      (Positive: GPU limited by CPU. Negative: CPU limited by GPU. Near 0: Balanced)
-                    </p>
-                  </div>
-                  
-                  <InfoSection icon={Layers} title="Primary Bottleneck Component">
-                    <Badge 
-                      variant={bottleneck.bottleneckComponent === 'Balanced' ? 'default' : 'destructive'}
-                      className={bottleneck.bottleneckComponent === 'Balanced' ? 'bg-accent text-accent-foreground' : 'bg-destructive text-destructive-foreground'}
-                      >
-                        {bottleneck.bottleneckComponent || 'N/A'}
-                      </Badge>
-                    <p className="text-sm text-foreground/90 mt-1">{getBottleneckComponentText(bottleneck.bottleneckComponent)}</p>
-                  </InfoSection>
-
-                  <InfoSection icon={AlertTriangle} title="Explanation">
-                    <p className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">{bottleneck.explanation}</p>
-                  </InfoSection>
-
-                  {bottleneck.recommendedResolution && (
-                    <InfoSection icon={MonitorPlay} title="Recommended Gaming Resolution">
-                      <p className="text-sm text-foreground/90">{bottleneck.recommendedResolution}</p>
-                    </InfoSection>
-                  )}
-
-                  {bottleneck.impactOnGaming && (
-                    <InfoSection icon={Gamepad2} title="Impact on Gaming">
-                      <p className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">{bottleneck.impactOnGaming}</p>
-                    </InfoSection>
-                  )}
-
-                  {bottleneck.impactOnWorkloads && (
-                    <InfoSection icon={Briefcase} title="Impact on Workloads">
-                      <p className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">{bottleneck.impactOnWorkloads}</p>
-                    </InfoSection>
-                  )}
-                  
-                  {bottleneck.potentialUpgradeSuggestions && bottleneck.potentialUpgradeSuggestions.length > 0 && (
-                    <InfoSection icon={Lightbulb} title="Upgrade Suggestions">
-                      <ul className="list-disc list-inside space-y-1 text-sm text-foreground/90">
-                        {bottleneck.potentialUpgradeSuggestions.map((suggestion, index) => (
-                          <li key={index}>{suggestion}</li>
-                        ))}
-                      </ul>
-                    </InfoSection>
-                  )}
-
-                  <p className="text-xs text-muted-foreground italic mt-4">
-                    Note: Bottleneck calculations are estimates and can vary based on specific workloads, resolutions, game settings, and other system components like RAM speed.
+            {isLoading && (
+              <div className="flex flex-col items-center justify-center h-full py-10">
+                <LoadingSpinner size={48} />
+                <p className="mt-4 text-muted-foreground">Analyzing components...</p>
+              </div>
+            )}
+            {!isLoading && !bottleneck && ( // This state might be briefly visible or not at all if isLoading covers it
+              <div className="flex flex-col items-center justify-center h-full py-10 text-center">
+                <Zap size={48} className="text-primary mb-4" />
+                <p className="text-muted-foreground">Enter CPU and GPU models to analyze potential bottlenecks.</p>
+              </div>
+            )}
+            {bottleneck && (
+              <div className="animate-fade-in space-y-6">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Overall Bottleneck Score</p>
+                  <p 
+                    className="text-5xl md:text-6xl font-bold"
+                    style={{ color: getBottleneckColor(bottleneck.bottleneckPercentage) }}
+                  >
+                    {bottleneck.bottleneckPercentage.toFixed(1)}%
+                  </p>
+                  <Progress 
+                    value={Math.abs(bottleneck.bottleneckPercentage)} 
+                    className="w-full h-3 mt-2 rounded-full" 
+                    style={{ 
+                      // @ts-ignore 
+                      '--indicator-color': getBottleneckColor(bottleneck.bottleneckPercentage) 
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    (Positive: GPU limited by CPU. Negative: CPU limited by GPU. Near 0: Balanced)
                   </p>
                 </div>
-              )}
-            </GlassCardContent>
+                
+                <InfoSection icon={Layers} title="Primary Bottleneck Component">
+                  <Badge 
+                    variant={bottleneck.bottleneckComponent === 'Balanced' ? 'default' : 'destructive'}
+                    className={bottleneck.bottleneckComponent === 'Balanced' ? 'bg-accent text-accent-foreground' : 'bg-destructive text-destructive-foreground'}
+                    >
+                      {bottleneck.bottleneckComponent || 'N/A'}
+                    </Badge>
+                  <p className="text-sm text-foreground/90 mt-1">{getBottleneckComponentText(bottleneck.bottleneckComponent)}</p>
+                </InfoSection>
+
+                <InfoSection icon={AlertTriangle} title="Explanation">
+                  <p className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">{bottleneck.explanation}</p>
+                </InfoSection>
+
+                {bottleneck.recommendedResolution && (
+                  <InfoSection icon={MonitorPlay} title="Recommended Gaming Resolution">
+                    <p className="text-sm text-foreground/90">{bottleneck.recommendedResolution}</p>
+                  </InfoSection>
+                )}
+
+                {bottleneck.impactOnGaming && (
+                  <InfoSection icon={Gamepad2} title="Impact on Gaming">
+                    <p className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">{bottleneck.impactOnGaming}</p>
+                  </InfoSection>
+                )}
+
+                {bottleneck.impactOnWorkloads && (
+                  <InfoSection icon={Briefcase} title="Impact on Workloads">
+                    <p className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">{bottleneck.impactOnWorkloads}</p>
+                  </InfoSection>
+                )}
+                
+                {bottleneck.potentialUpgradeSuggestions && bottleneck.potentialUpgradeSuggestions.length > 0 && (
+                  <InfoSection icon={Lightbulb} title="Upgrade Suggestions">
+                    <ul className="list-disc list-inside space-y-1 text-sm text-foreground/90">
+                      {bottleneck.potentialUpgradeSuggestions.map((suggestion, index) => (
+                        <li key={index}>{suggestion}</li>
+                      ))}
+                    </ul>
+                  </InfoSection>
+                )}
+
+                <p className="text-xs text-muted-foreground italic mt-4">
+                  Note: Bottleneck calculations are estimates and can vary based on specific workloads, resolutions, game settings, and other system components like RAM speed.
+                </p>
+              </div>
+            )}
+          </GlassCardContent>
+        </GlassCard>
+      )}
+        {!isLoading && !bottleneck && ( // Message to show when page loads and no calculation has been done yet
+          <GlassCard className="min-h-[300px]">
+              <GlassCardHeader>
+                  <GlassCardTitle>Analysis Results</GlassCardTitle>
+              </GlassCardHeader>
+              <GlassCardContent className="flex flex-col items-center justify-center h-full py-10 text-center">
+                  <Zap size={48} className="text-primary mb-4" />
+                  <p className="text-muted-foreground">Enter CPU and GPU models above to analyze potential bottlenecks.</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">Results will be displayed here.</p>
+              </GlassCardContent>
           </GlassCard>
-        )}
-         {!isLoading && !bottleneck && ( // Message to show when page loads and no calculation has been done yet
-            <GlassCard className="min-h-[300px]">
-                <GlassCardHeader>
-                    <GlassCardTitle>Analysis Results</GlassCardTitle>
-                </GlassCardHeader>
-                <GlassCardContent className="flex flex-col items-center justify-center h-full py-10 text-center">
-                    <Zap size={48} className="text-primary mb-4" />
-                    <p className="text-muted-foreground">Enter CPU and GPU models above to analyze potential bottlenecks.</p>
-                    <p className="text-sm text-muted-foreground/70 mt-1">Results will be displayed here.</p>
-                </GlassCardContent>
-            </GlassCard>
-        )}
-      </div>
+      )}
+    </div>
+  );
+}
+
+export default function BottleneckCalculatorPage() {
+  return (
+    <div className="space-y-8">
+      <SectionTitle>Bottleneck Calculator</SectionTitle>
+      <Suspense fallback={
+        <div className="flex justify-center items-center py-16">
+          <LoadingSpinner size={48} />
+        </div>
+      }>
+        <BottleneckCalculatorView />
+      </Suspense>
     </div>
   );
 }

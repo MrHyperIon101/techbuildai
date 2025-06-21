@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -33,7 +33,7 @@ const compatibilityFormSchema = z.object({
 
 type CompatibilityFormValues = z.infer<typeof compatibilityFormSchema>;
 
-export default function CompatibilityCheckerPage() {
+function CompatibilityCheckerView() {
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState<CompatibilityReport | null>(null);
   const { toast } = useToast();
@@ -94,157 +94,171 @@ export default function CompatibilityCheckerPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <SectionTitle>PC Part Compatibility Checker</SectionTitle>
-      <div className="space-y-6">
-        <GlassCard>
-          <GlassCardHeader>
-            <GlassCardTitle>Enter Your Components</GlassCardTitle>
-          </GlassCardHeader>
-          <GlassCardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="cpu" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CPU Model</FormLabel>
-                      <FormControl><Input placeholder="e.g., AMD Ryzen 7 7800X3D" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="motherboard" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Motherboard Model</FormLabel>
-                      <FormControl><Input placeholder="e.g., MSI B650 TOMAHAWK WIFI" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="ram" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>RAM Details</FormLabel>
-                      <FormControl><Input placeholder="e.g., 32GB DDR5 6000MHz CL30" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="gpu" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>GPU Model (Optional)</FormLabel>
-                      <FormControl><Input placeholder="e.g., NVIDIA GeForce RTX 4080" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="psu" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>PSU (Wattage & Model)</FormLabel>
-                      <FormControl><Input placeholder="e.g., Corsair RM850x 850W Gold" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="pcCase" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>PC Case (Model or Form Factor)</FormLabel>
-                      <FormControl><Input placeholder="e.g., NZXT H7 Flow ATX Mid Tower" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-                <FormField control={form.control} name="storage" render={({ field }) => (
+    <div className="space-y-6">
+      <GlassCard>
+        <GlassCardHeader>
+          <GlassCardTitle>Enter Your Components</GlassCardTitle>
+        </GlassCardHeader>
+        <GlassCardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="cpu" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Storage Devices (Optional)</FormLabel>
-                    <FormControl><Textarea placeholder="e.g., 1TB NVMe SSD, 4TB HDD" {...field} className="bg-background/50 rounded-xl p-4 min-h-[80px]" /></FormControl>
-                    <FormDescription>List main storage devices, comma-separated.</FormDescription>
+                    <FormLabel>CPU Model</FormLabel>
+                    <FormControl><Input placeholder="e.g., AMD Ryzen 7 7800X3D" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" disabled={isLoading} className="w-full rounded-full bg-accent text-accent-foreground hover:bg-accent/90 transition-all duration-300 transform hover:scale-105">
-                  {isLoading ? <LoadingSpinner /> : <><ShieldCheck className="mr-2 h-5 w-5" /> Check Compatibility</>}
-                </Button>
-              </form>
-            </Form>
+                <FormField control={form.control} name="motherboard" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Motherboard Model</FormLabel>
+                    <FormControl><Input placeholder="e.g., MSI B650 TOMAHAWK WIFI" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="ram" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>RAM Details</FormLabel>
+                    <FormControl><Input placeholder="e.g., 32GB DDR5 6000MHz CL30" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="gpu" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>GPU Model (Optional)</FormLabel>
+                    <FormControl><Input placeholder="e.g., NVIDIA GeForce RTX 4080" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="psu" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PSU (Wattage & Model)</FormLabel>
+                    <FormControl><Input placeholder="e.g., Corsair RM850x 850W Gold" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="pcCase" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PC Case (Model or Form Factor)</FormLabel>
+                    <FormControl><Input placeholder="e.g., NZXT H7 Flow ATX Mid Tower" {...field} className="bg-background/50 rounded-full px-4" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={form.control} name="storage" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Storage Devices (Optional)</FormLabel>
+                  <FormControl><Textarea placeholder="e.g., 1TB NVMe SSD, 4TB HDD" {...field} className="bg-background/50 rounded-xl p-4 min-h-[80px]" /></FormControl>
+                  <FormDescription>List main storage devices, comma-separated.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <Button type="submit" disabled={isLoading} className="w-full rounded-full bg-accent text-accent-foreground hover:bg-accent/90 transition-all duration-300 transform hover:scale-105">
+                {isLoading ? <LoadingSpinner /> : <><ShieldCheck className="mr-2 h-5 w-5" /> Check Compatibility</>}
+              </Button>
+            </form>
+          </Form>
+        </GlassCardContent>
+      </GlassCard>
+
+      {(isLoading || report) && (
+        <GlassCard className="min-h-[300px]">
+          <GlassCardHeader>
+            <GlassCardTitle>Compatibility Analysis</GlassCardTitle>
+          </GlassCardHeader>
+          <GlassCardContent>
+            {isLoading && (
+              <div className="flex flex-col items-center justify-center h-full py-10">
+                <LoadingSpinner size={48} />
+                <p className="mt-4 text-muted-foreground">Analyzing components...</p>
+              </div>
+            )}
+            {report && (
+              <div className="animate-fade-in space-y-6">
+                <div className={`p-4 rounded-lg text-center ${report.isGenerallyCompatible ? 'bg-accent/10 text-accent-foreground' : 'bg-destructive/10 text-destructive-foreground'}`}>
+                  {report.isGenerallyCompatible ? (
+                    <CheckCircle size={32} className="mx-auto mb-2 text-accent" />
+                  ) : (
+                    <AlertTriangle size={32} className="mx-auto mb-2 text-destructive" />
+                  )}
+                  <h3 className="text-2xl font-semibold">{report.isGenerallyCompatible ? "Generally Compatible" : "Potential Issues Found"}</h3>
+                  <p className="text-sm opacity-90">{report.overallAssessment}</p>
+                </div>
+
+                {report.issues && report.issues.length > 0 && (
+                  <div>
+                    <h4 className="text-xl font-semibold text-destructive mb-2 flex items-center"><AlertTriangle className="mr-2"/> Compatibility Issues:</h4>
+                    <div className="space-y-3">
+                      {report.issues.map((issue, index) => (
+                        <IssueCard key={index} issue={issue} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {report.warnings && report.warnings.length > 0 && (
+                  <div>
+                    <h4 className="text-xl font-semibold text-primary mb-2 flex items-center"><MessageSquareWarning className="mr-2"/> Important Warnings:</h4>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-foreground/90 bg-primary/5 p-3 rounded-md">
+                      {report.warnings.map((warning, index) => (
+                        <li key={index}>{warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {report.checkedComponents && (
+                  <div>
+                    <h4 className="text-xl font-semibold text-accent mb-2 flex items-center"><Info className="mr-2"/> Components Analyzed by AI:</h4>
+                    <div className="text-sm bg-muted/20 p-3 rounded-md space-y-1">
+                      {Object.entries(report.checkedComponents).map(([key, value]) => value ? (
+                        <p key={key}><strong className="capitalize text-muted-foreground">{key.replace(/([A-Z])/g, ' $1')}:</strong> {value}</p>
+                      ) : null)}
+                    </div>
+                  </div>
+                )}
+                <Separator className="my-4" />
+                <p className="text-xs text-muted-foreground italic text-center">
+                  Disclaimer: This AI compatibility check is for informational purposes only and may not cover all specific scenarios or configurations. Always verify compatibility with manufacturer specifications and documentation before purchasing components.
+                </p>
+              </div>
+            )}
           </GlassCardContent>
         </GlassCard>
-
-        {(isLoading || report) && (
+      )}
+      {!isLoading && !report && (
           <GlassCard className="min-h-[300px]">
-            <GlassCardHeader>
-              <GlassCardTitle>Compatibility Analysis</GlassCardTitle>
-            </GlassCardHeader>
-            <GlassCardContent>
-              {isLoading && (
-                <div className="flex flex-col items-center justify-center h-full py-10">
-                  <LoadingSpinner size={48} />
-                  <p className="mt-4 text-muted-foreground">Analyzing components...</p>
-                </div>
-              )}
-              {report && (
-                <div className="animate-fade-in space-y-6">
-                  <div className={`p-4 rounded-lg text-center ${report.isGenerallyCompatible ? 'bg-accent/10 text-accent-foreground' : 'bg-destructive/10 text-destructive-foreground'}`}>
-                    {report.isGenerallyCompatible ? (
-                      <CheckCircle size={32} className="mx-auto mb-2 text-accent" />
-                    ) : (
-                      <AlertTriangle size={32} className="mx-auto mb-2 text-destructive" />
-                    )}
-                    <h3 className="text-2xl font-semibold">{report.isGenerallyCompatible ? "Generally Compatible" : "Potential Issues Found"}</h3>
-                    <p className="text-sm opacity-90">{report.overallAssessment}</p>
-                  </div>
-
-                  {report.issues && report.issues.length > 0 && (
-                    <div>
-                      <h4 className="text-xl font-semibold text-destructive mb-2 flex items-center"><AlertTriangle className="mr-2"/> Compatibility Issues:</h4>
-                      <div className="space-y-3">
-                        {report.issues.map((issue, index) => (
-                          <IssueCard key={index} issue={issue} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {report.warnings && report.warnings.length > 0 && (
-                    <div>
-                      <h4 className="text-xl font-semibold text-primary mb-2 flex items-center"><MessageSquareWarning className="mr-2"/> Important Warnings:</h4>
-                      <ul className="list-disc list-inside space-y-1 text-sm text-foreground/90 bg-primary/5 p-3 rounded-md">
-                        {report.warnings.map((warning, index) => (
-                          <li key={index}>{warning}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {report.checkedComponents && (
-                    <div>
-                      <h4 className="text-xl font-semibold text-accent mb-2 flex items-center"><Info className="mr-2"/> Components Analyzed by AI:</h4>
-                      <div className="text-sm bg-muted/20 p-3 rounded-md space-y-1">
-                        {Object.entries(report.checkedComponents).map(([key, value]) => value ? (
-                          <p key={key}><strong className="capitalize text-muted-foreground">{key.replace(/([A-Z])/g, ' $1')}:</strong> {value}</p>
-                        ) : null)}
-                      </div>
-                    </div>
-                  )}
-                  <Separator className="my-4" />
-                  <p className="text-xs text-muted-foreground italic text-center">
-                    Disclaimer: This AI compatibility check is for informational purposes only and may not cover all specific scenarios or configurations. Always verify compatibility with manufacturer specifications and documentation before purchasing components.
-                  </p>
-                </div>
-              )}
-            </GlassCardContent>
+              <GlassCardHeader>
+                  <GlassCardTitle>Compatibility Analysis</GlassCardTitle>
+              </GlassCardHeader>
+              <GlassCardContent className="flex flex-col items-center justify-center h-full py-10 text-center">
+                  <Puzzle size={48} className="text-primary mb-4" />
+                  <p className="text-muted-foreground">Enter your PC components above to check for compatibility.</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">The AI will analyze them and report potential issues here.</p>
+              </GlassCardContent>
           </GlassCard>
-        )}
-        {!isLoading && !report && (
-            <GlassCard className="min-h-[300px]">
-                <GlassCardHeader>
-                    <GlassCardTitle>Compatibility Analysis</GlassCardTitle>
-                </GlassCardHeader>
-                <GlassCardContent className="flex flex-col items-center justify-center h-full py-10 text-center">
-                    <Puzzle size={48} className="text-primary mb-4" />
-                    <p className="text-muted-foreground">Enter your PC components above to check for compatibility.</p>
-                    <p className="text-sm text-muted-foreground/70 mt-1">The AI will analyze them and report potential issues here.</p>
-                </GlassCardContent>
-            </GlassCard>
-        )}
-      </div>
+      )}
     </div>
   );
 }
+
+
+export default function CompatibilityCheckerPage() {
+  return (
+    <div className="space-y-8">
+      <SectionTitle>PC Part Compatibility Checker</SectionTitle>
+      <Suspense fallback={
+        <div className="flex justify-center items-center py-16">
+          <LoadingSpinner size={48} />
+        </div>
+      }>
+        <CompatibilityCheckerView />
+      </Suspense>
+    </div>
+  );
+}
+
 
 interface IssueCardProps {
   issue: CompatibilityIssue;
