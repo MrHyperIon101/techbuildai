@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { compatibilityCheckTool } from './check-compatibility';
 
 const SuggestPcBuildInputSchema = z.object({
   budget: z.number().describe('The budget for the PC build in INR.'),
@@ -44,13 +45,24 @@ export async function suggestPcBuild(input: SuggestPcBuildInput): Promise<Sugges
 
 const prompt = ai.definePrompt({
   name: 'suggestPcBuildPrompt',
+  tools: [compatibilityCheckTool],
   input: {schema: SuggestPcBuildInputSchema},
   output: {schema: SuggestPcBuildOutputSchema},
   prompt: `You are an expert PC builder. A user wants to build a PC with a budget of {{budget}} INR for {{desiredUsage}}.
-It is absolutely critical that the 'estimatedTotalCost' of your suggested build does NOT exceed this budget. Prioritize staying within budget over all other factors if necessary.
 
+**CRITICAL INSTRUCTIONS:**
+1.  **Compatibility First:** After making a preliminary selection of components, you **MUST** use the \`compatibilityCheckTool\`. Provide it with the CPU, motherboard, RAM, GPU, PSU, and Case you have selected.
+2.  **Review and Revise:** If the tool returns **any** issues (i.e., the 'issues' array is not empty or 'isGenerallyCompatible' is false), you **MUST** revise your component choices to fix the problems. You may need to change the motherboard, RAM type, case size, etc.
+3.  **Re-Verify:** After revising, you must call the \`compatibilityCheckTool\` again to ensure the new build is free of issues. Repeat this process until the tool returns an empty 'issues' array and 'isGenerallyCompatible' is true.
+4.  **Final Output:** Only provide the final, fully compatible build as your response. Do not describe the intermediate steps or compatibility errors you encountered and fixed. The final build must be compatible.
+
+**Budget and Component Choices:**
+- It is absolutely critical that the 'estimatedTotalCost' of your suggested build does NOT exceed this budget.
+- For builds with a budget under 100,000 INR, prioritize cost-effective RAM (e.g., standard speed DDR4 or DDR5 without large heat spreaders or RGB) to save money. For higher budgets, you can select faster or aesthetically pleasing RAM that matches the build theme.
+- You MUST suggest exactly one of each of the following core components: CPU, Motherboard, RAM, GPU, Storage, PSU, Case, CPU Cooler, Thermal Paste.
+
+**User Preferences:**
 {{#if includePeripherals}}The user wants to include peripherals (monitor, keyboard, mouse) within this budget.{{/if}}
-
 The user has also specified the following preferences, which you must follow:
 {{#if chassisSize}}
 - Desired Chassis Size: {{chassisSize}}. You must select a PC Case that fits this size requirement (e.g., ATX Mid-Tower, mITX for SFF). This will also constrain your motherboard choice (e.g., an ITX or Micro-ATX motherboard for SFF builds).
@@ -61,18 +73,8 @@ The user has also specified the following preferences, which you must follow:
 - If the budget is not high, you should still try to adhere to the theme if possible without significantly compromising performance for the cost (e.g., picking a black case for a 'black with RGB' theme is easy), but do not include expensive aesthetic items like custom cables.
 {{/if}}
 
-Your task is to suggest a complete and compatible set of PC components. You MUST suggest exactly one of each of the following core components:
-- CPU
-- Motherboard
-- RAM (e.g., "16GB DDR4 3200MHz")
-- GPU (Graphics Card)
-- Storage (e.g., "1TB NVMe SSD")
-- PSU (Power Supply Unit) (e.g., "750W Gold")
-- Case (e.g., "Mid Tower ATX")
-- CPU Cooler
-- Thermal Paste
-
-For the CPU Cooler and Thermal Paste, follow these specific rules:
+**Component Specific Rules:**
+For the CPU Cooler and Thermal Paste:
 - If the CPU model comes with a decent in-box cooler (e.g., AMD Wraith series for non-X models, Intel non-K SKUs) AND the total budget is under 100000 INR, you should list the CPU Cooler as "In-box CPU Cooler" with a price of 0. In this case, you MUST list the Thermal Paste as "Pre-applied on in-box cooler" with a price of 0.
 - If the CPU model does not come with a cooler (e.g., AMD 'X' series Ryzen 5 and above, Intel 'K' series) OR if the budget is over 100000 INR, you MUST suggest a suitable after-market air or liquid cooler (e.g., "Deepcool AK400", "Noctua NH-D15"). In this case, for Thermal Paste, you should suggest a high-performance option like "Honeywell PTM7950 pad" or "Arctic MX-4" and provide its price.
 
@@ -80,27 +82,16 @@ For Custom Cables:
 - Only include a component with the type 'Custom Cables' if the budget is high (over 150000 INR) and a specific build theme has been requested. Otherwise, omit this component.
 
 {{#if includePeripherals}}
-You MUST also suggest one of each of the following peripherals, ensuring their cost is accounted for within the total budget:
-- Monitor
-- Keyboard
-- Mouse
+You MUST also suggest one of each of the following peripherals, ensuring their cost is accounted for within the total budget: Monitor, Keyboard, Mouse.
 {{/if}}
 
-For each component and peripheral, provide:
-- The specific model name.
-- The component type (must be one of 'CPU', 'Motherboard', 'RAM', 'GPU', 'Storage', 'PSU', 'Case', 'CPU Cooler', 'Thermal Paste', 'Custom Cables'{{#if includePeripherals}}, 'Monitor', 'Keyboard', 'Mouse'{{/if}}).
-- An estimated price in INR.
-- A brief description of its estimated performance.
-- A shopping link, preferably from amazon.in or flipkart.com.
-
-Also provide the estimated total cost for all components, an overall performance summary, and an explanation of your choices.
-Ensure the components are compatible with each other. For example, the CPU socket must match the motherboard socket, and the motherboard and case form factors must be compatible.
-
-Prioritize components available on Indian e-commerce sites.
-The 'components' list MUST include all required core components. If 'includePeripherals' is true, it MUST also include one of each peripheral. The 'Custom Cables' component is optional and should only be included based on the rules above.
+For each component, provide: name, type, price in INR, estimatedPerformance, and a shopping link from amazon.in or flipkart.com.
+Also provide the estimated total cost, an overall performance summary, and an explanation of your choices.
+The 'components' list MUST include all required core components. If 'includePeripherals' is true, it MUST also include one of each peripheral.
 Respond with a JSON object that strictly follows the output schema.
 `,
 });
+
 
 const suggestPcBuildFlow = ai.defineFlow(
   {

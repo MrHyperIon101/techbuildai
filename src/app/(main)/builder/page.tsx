@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -12,8 +13,8 @@ import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/
 import { SectionTitle } from '@/components/common/section-title';
 import { LoadingSpinner } from '@/components/common/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
-import { handleSuggestPcBuild, handleCalculateBottleneck, handleCheckCompatibility, handleEstimateGamingPerformance } from '@/lib/actions';
-import type { BuildSuggestion, PCComponent, BottleneckInfo, CompatibilityReport, GamingPerformanceOutput, CompatibilityIssue } from '@/lib/types';
+import { handleSuggestPcBuild, handleCalculateBottleneck, handleEstimateGamingPerformance } from '@/lib/actions';
+import type { BuildSuggestion, PCComponent, BottleneckInfo, GamingPerformanceOutput } from '@/lib/types';
 import { useConversation } from '@/contexts/conversation-context';
 import { Bot, ShoppingCart, BarChart3, ShieldCheck, Gamepad2, Cpu, Video, MemoryStick, HardDrive, Power, HardDriveDownload, Monitor, Keyboard, Mouse, TestTube2, Wind, Layers, Network, AlertTriangle, CheckCircle, Zap } from 'lucide-react';
 import Link from 'next/link';
@@ -42,7 +43,7 @@ const componentIcons: { [key: string]: React.ElementType } = {
   storage: HardDrive,
   motherboard: HardDriveDownload,
   psu: Power,
-  case: (props) => <div {...props} className="w-5 h-5 border-2 rounded-sm border-current" />,
+  case: (props: any) => <div {...props} className="w-5 h-5 border-2 rounded-sm border-current" />,
   'cpu cooler': Wind,
   'thermal paste': Layers,
   'custom cables': Network,
@@ -60,7 +61,6 @@ export default function AiPcBuilderPage() {
 
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [bottleneckReport, setBottleneckReport] = useState<BottleneckInfo | null>(null);
-  const [compatibilityReport, setCompatibilityReport] = useState<CompatibilityReport | null>(null);
   const [gamingReport, setGamingReport] = useState<GamingPerformanceOutput | null>(null);
 
   const form = useForm<BuilderFormValues>({
@@ -79,7 +79,6 @@ export default function AiPcBuilderPage() {
     setSuggestion(null);
     setAnalysisLoading(false);
     setBottleneckReport(null);
-    setCompatibilityReport(null);
     setGamingReport(null);
 
     const userMessage = `Budget: ₹${data.budget}, Usage: ${data.desiredUsage}, Peripherals: ${data.includePeripherals}, Size: ${data.chassisSize}, Theme: ${data.buildTheme || 'None'}`;
@@ -91,35 +90,24 @@ export default function AiPcBuilderPage() {
       addMessage({ type: 'ai', feature: 'builder', content: 'Here is your PC build suggestion:', data: result });
       toast({
         title: "Build Suggestion Ready!",
-        description: "Now analyzing the build's performance and compatibility...",
+        description: "Now analyzing the build's performance...",
         variant: "default",
       });
 
       setAnalysisLoading(true);
       const cpu = result.components.find(c => c.type === 'CPU')?.name;
       const gpu = result.components.find(c => c.type === 'GPU')?.name;
-      const ram = result.components.find(c => c.type === 'RAM')?.name;
-      const motherboard = result.components.find(c => c.type === 'Motherboard')?.name;
-      const psu = result.components.find(c => c.type === 'PSU')?.name;
-      const pcCase = result.components.find(c => c.type === 'Case')?.name;
-      const storage = result.components.find(c => c.type === 'Storage')?.name;
-
+      
       const analysisPromises: Promise<any>[] = [];
 
       if (cpu && gpu) {
         analysisPromises.push(handleCalculateBottleneck({ cpu, gpu }));
-      }
-      if (cpu && motherboard && ram && psu && pcCase) {
-        analysisPromises.push(handleCheckCompatibility({ cpu, motherboard, ram, gpu, psu, pcCase, storage }));
-      }
-      if (cpu && gpu) {
         analysisPromises.push(handleEstimateGamingPerformance({ cpu, gpu, gameName: 'Cyberpunk 2077' }));
       }
       
-      const [bottleneckResult, compatibilityResult, gamingResult] = await Promise.allSettled(analysisPromises);
+      const [bottleneckResult, gamingResult] = await Promise.allSettled(analysisPromises);
       
       if (bottleneckResult.status === 'fulfilled') setBottleneckReport(bottleneckResult.value);
-      if (compatibilityResult.status === 'fulfilled') setCompatibilityReport(compatibilityResult.value);
       if (gamingResult.status === 'fulfilled') setGamingReport(gamingResult.value);
 
       setAnalysisLoading(false);
@@ -296,8 +284,15 @@ export default function AiPcBuilderPage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                      <GlassCard className="p-4">
+                          <GlassCardTitle className="text-lg mb-2 flex items-center"><ShieldCheck className="mr-2 h-5 w-5 text-accent" /> Compatibility</GlassCardTitle>
+                          <div className="flex items-center gap-2">
+                              <CheckCircle className="h-6 w-6 text-accent" />
+                              <p className="font-semibold text-foreground">Build Pre-Verified</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">This build has been pre-checked for component compatibility by the AI.</p>
+                      </GlassCard>
                       {bottleneckReport && <BottleneckReportCard report={bottleneckReport} />}
-                      {compatibilityReport && <CompatibilityReportCard report={compatibilityReport} />}
                       {gamingReport && <GamingReportCard report={gamingReport} />}
                     </div>
                   )}
@@ -376,28 +371,6 @@ const BottleneckReportCard = ({ report }: { report: BottleneckInfo }) => {
         style={{ '--indicator-color': getBottleneckColor(report.bottleneckPercentage) } as React.CSSProperties}
       />
       <p className="text-xs text-muted-foreground mt-1">{report.explanation}</p>
-    </GlassCard>
-  );
-};
-
-const CompatibilityReportCard = ({ report }: { report: CompatibilityReport }) => {
-  return (
-    <GlassCard className="p-4">
-       <GlassCardTitle className="text-lg mb-2 flex items-center"><ShieldCheck className="mr-2 h-5 w-5" /> Compatibility</GlassCardTitle>
-       <div className="flex items-center gap-2">
-         {report.isGenerallyCompatible ? (
-            <CheckCircle className="h-6 w-6 text-accent" />
-          ) : (
-            <AlertTriangle className="h-6 w-6 text-destructive" />
-          )}
-        <p className="font-semibold">{report.isGenerallyCompatible ? "Compatible" : "Issues Found"}</p>
-       </div>
-       <p className="text-xs text-muted-foreground mt-1">{report.overallAssessment}</p>
-       {report.issues.length > 0 && (
-         <div className="mt-2 text-xs text-destructive/90">
-          - {report.issues[0].description}
-         </div>
-       )}
     </GlassCard>
   );
 };

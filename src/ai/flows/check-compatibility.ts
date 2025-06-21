@@ -4,6 +4,7 @@
  * @fileOverview AI-powered PC component compatibility checker.
  *
  * - checkCompatibility - A function that analyzes PC components for compatibility.
+ * - compatibilityCheckTool - A Genkit tool for checking compatibility, usable by other flows.
  * - CheckCompatibilityInput - The input type for the checkCompatibility function.
  * - CheckCompatibilityOutput - The return type for the checkCompatibility function.
  */
@@ -121,5 +122,18 @@ const checkCompatibilityFlow = ai.defineFlow(
     output.issues = output.issues || [];
     output.warnings = output.warnings || [];
     return output;
+  }
+);
+
+export const compatibilityCheckTool = ai.defineTool(
+  {
+    name: 'compatibilityCheckTool',
+    description: 'Verifies the compatibility of a given set of PC components. Returns a list of issues if any are found.',
+    inputSchema: CheckCompatibilityInputSchema,
+    outputSchema: CheckCompatibilityOutputSchema,
+  },
+  async (input) => {
+    // The tool can directly call the flow function
+    return checkCompatibilityFlow(input);
   }
 );
