@@ -1,4 +1,5 @@
 
+
 export interface Message {
   id: string;
   type: 'user' | 'ai' | 'system';
@@ -261,3 +262,20 @@ export interface GamingPerformanceOutput {
     performance: PerformanceAtResolution[];
     overallAssessment: string;
 }
+
+export interface SuggestedUpgrade {
+    name: string;
+    type: string;
+    price: number;
+    reason: string;
+    link: string;
+}
+  
+export interface UpgradePath {
+    analysis: string;
+    upgrades: SuggestedUpgrade[];
+    totalUpgradeCost: number;
+    performanceEstimateAfter: string;
+    warnings?: string[];
+}
+

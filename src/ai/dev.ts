@@ -15,5 +15,6 @@ import '@/ai/flows/get-aida64-scores.ts';
 import '@/ai/flows/get-userbenchmark-scores.ts';
 import '@/ai/flows/compare-components.ts';
 import '@/ai/flows/estimate-gaming-performance.ts';
+import '@/ai/flows/propose-upgrade-path.ts';
 
     

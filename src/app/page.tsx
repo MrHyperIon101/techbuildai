@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from '@/components/common/glass-card';
 import Link from 'next/link';
-import { ArrowRight, Bot, Cpu, Wrench, ShieldCheck, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain, ClipboardList, Users, GitCompareArrows, Gamepad2 } from 'lucide-react';
+import { ArrowRight, Bot, Cpu, Wrench, ShieldCheck, BarChart3, BarChartHorizontalBig, Search as AnalysisIcon, Flame, Gauge, Brain, ClipboardList, Users, GitCompareArrows, Gamepad2, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function HomePage() {
@@ -28,6 +28,12 @@ export default function HomePage() {
           description="Get personalized PC component recommendations based on your budget and needs."
           icon={<Bot className="w-8 h-8 text-accent" />}
           href="/builder"
+        />
+         <FeatureCard
+          title="AI Upgrade Advisor"
+          description="Get expert advice on the best upgrade path for your existing PC."
+          icon={<TrendingUp className="w-8 h-8 text-accent" />}
+          href="/upgrade-advisor"
         />
         <FeatureCard
           title="Component Insights"

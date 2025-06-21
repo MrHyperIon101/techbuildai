@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import {
   Home, Cpu, Search as AnalysisIcon, BookOpen, History, Bot, ShieldCheck,
   BarChart3, BarChartHorizontalBig, Flame, Gauge, Brain, ClipboardList, Users,
-  ChevronUp, GitCompareArrows, Gamepad2
+  ChevronUp, GitCompareArrows, Gamepad2, TrendingUp
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -20,12 +20,13 @@ import { Button } from '@/components/ui/button';
 const primaryNavItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/builder', label: 'AI Builder', icon: Bot },
+  { href: '/upgrade-advisor', label: 'Upgrade', icon: TrendingUp },
   { href: '/components-db', label: 'Components', icon: Cpu },
-  { href: '/compare', label: 'Compare', icon: GitCompareArrows },
   { href: '/history', label: 'History', icon: History },
 ];
 
 const moreNavItems = [
+  { href: '/compare', label: 'Compare', icon: GitCompareArrows },
   { href: '/gaming-estimator', label: 'FPS Estimator', icon: Gamepad2 },
   { href: '/bottleneck-calculator', label: 'Bottleneck', icon: AnalysisIcon },
   { href: '/compatibility-checker', label: 'Compat. Check', icon: ShieldCheck },

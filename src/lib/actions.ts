@@ -14,6 +14,8 @@ import { getAida64Scores, GetAida64ScoresInput } from '@/ai/flows/get-aida64-sco
 import { getUserBenchmarkScores, GetUserBenchmarkScoresInput } from '@/ai/flows/get-userbenchmark-scores';
 import { compareComponents, CompareComponentsInput } from '@/ai/flows/compare-components';
 import { estimateGamingPerformance, EstimateGamingPerformanceInput } from '@/ai/flows/estimate-gaming-performance';
+import { proposeUpgradePath, ProposeUpgradePathInput } from '@/ai/flows/propose-upgrade-path';
+
 
 import type { 
     BuildSuggestion, 
@@ -28,7 +30,8 @@ import type {
     Aida64ScoresOutput,
     UserBenchmarkScoresOutput,
     CompareComponentsOutput,
-    GamingPerformanceOutput
+    GamingPerformanceOutput,
+    UpgradePath
 } from './types';
 
 export async function handleSuggestPcBuild(input: SuggestPcBuildInput): Promise<BuildSuggestion> {
@@ -239,4 +242,14 @@ export async function handleEstimateGamingPerformance(input: EstimateGamingPerfo
         console.error("Error in handleEstimateGamingPerformance:", error);
         throw new Error("Failed to estimate gaming performance. Please try again.");
     }
+}
+
+export async function handleProposeUpgradePath(input: ProposeUpgradePathInput): Promise<UpgradePath> {
+  try {
+    const result = await proposeUpgradePath(input);
+    return result as UpgradePath;
+  } catch (error) {
+    console.error("Error in handleProposeUpgradePath:", error);
+    throw new Error("Failed to generate an upgrade path. Please ensure all current components are listed correctly and try again.");
+  }
 }
